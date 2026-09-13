@@ -1,6 +1,45 @@
 import SiteShell from '@/components/SiteShell';
+import styles from './leadership.module.css';
+
+const DIRECTORS = [
+  { id:'PJ', name:'Pradip Jagyasi', role:'CEO & Co-Founder', bio:'Sets the company’s overall vision and strategy, and leads growth, brand partnerships and franchise expansion across Maharashtra and beyond.', active:true },
+  { id:'GJ', name:'Gautam Jagyasi', role:'Managing Director', bio:'', active:false },
+  { id:'NW', name:'Nilesh Wadhvani', role:'Whole-Time Director', bio:'', active:false },
+  { id:'KJ', name:'Kapil Jagyasi', role:'Whole-Time Director', bio:'', active:false },
+  { id:'VJ', name:'Vijay Jagyasi', role:'Whole-Time Director', bio:'', active:false },
+];
 
 export default function LeadershipPage() {
-  const leaders = [['pradip','PJ','Pradip Jagyasi','CEO & Co-Founder','Sets the company\'s overall vision and strategy, and leads growth, brand partnerships and franchise expansion across Maharashtra and beyond.'],['gautam','GJ','Gautam Jagyasi','Managing Director','Oversees daily business operations, making sure every store and every brand runs smoothly and consistently.'],['nilesh','NW','Nilesh Wadhvani','Whole-Time Director','Provides hands-on operational leadership and helps guide franchise partners toward long-term success.'],['kapil','KJ','Kapil Jagyasi','Whole-Time Director','Focuses on store-level execution, vendor relationships and maintaining consistent quality across the network.'],['vijay','VJ','Vijay Jagyasi','Whole-Time Director','Supports governance, compliance and the steady expansion of the company\'s retail footprint.']];
-  return <SiteShell><main id="main-content"><section id="leadership" className="leadership-section"><div className="container leadership-container"><div className="section-heading" id="leadership-heading"><p className="section-eyebrow">Meet The Team</p><h2 className="section-title">Our Leadership</h2><p className="section-intro">Mahalaxmi Telecom Private Limited is led by an experienced team committed to honest guidance, long-term growth and building a trusted retail brand across India.</p></div><div className="leadership-grid" id="leadership-grid">{leaders.map(([id, initials, name, role, bio]) => <article className="leader-card" id={`leader-${id}`} key={id}><div className="leader-avatar"><span className="leader-initials">{initials}</span></div><h3 className="leader-name">{name}</h3><p className="leader-role">{role}</p><p className="leader-bio">{bio}</p></article>)}</div></div></section></main></SiteShell>;
+  return (
+    <SiteShell>
+      <main id="main-content">
+        <section className={styles.topSection}>
+          <div className={styles.topContainer}>
+            <p className={styles.eyebrow}>Leadership</p>
+            <h1 className={styles.topTitle}>The people behind<br /><span className={styles.topTitleGold}>every store</span>.</h1>
+            <p className={styles.topIntro}>A leadership team drawn from two decades of telecom distribution, now focused on building a premium retail chain.</p>
+          </div>
+        </section>
+
+        <section className={styles.boardSection}>
+          <div className={styles.boardContainer}>
+            <p className={styles.eyebrow}>Board & Leadership</p>
+            <h2 className={styles.boardTitle}>Five directors, one shared standard of retail.</h2>
+
+            <div className={styles.grid}>
+              {DIRECTORS.map(d=>(
+                <div key={d.id} className={`${styles.card} ${d.active?styles.cardActive:''}`}>
+                  <div className={`${styles.avatar} ${d.active?styles.avatarFilled:styles.avatarOutline}`}>{d.id}</div>
+                  <h3 className={styles.cardName}>{d.name}</h3>
+                  <p className={styles.cardRole}>{d.role}</p>
+                  {d.active ? <p className={styles.cardBio}>{d.bio}</p> : <div style={{flex:1}}/>}
+                  <a href="#" className={`${styles.cardLink} ${!d.active?styles.cardLinkMuted:''}`}>{d.active?'— Profile':'View Profile'}</a>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      </main>
+    </SiteShell>
+  );
 }

@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import SiteShell from '@/components/SiteShell';
 import { InfiniteSlider } from '@/components/InfiniteSlider';
+import ScrollFlythrough from '@/components/ScrollFlythrough';
 import styles from './page.module.css';
 
 const heroImages = [
@@ -123,7 +124,8 @@ export default function Home() {
 
       <section id="who-we-are" className={styles.aboutSection}>
         <div className={styles.aboutContainer}>
-          <div className={styles.aboutMedia}>
+          <div className={styles.aboutMedia} id="about-zero-frame">
+            {/* Zeroth frame — ScrollFlythrough takeover starts from this same asset, then grows to fullscreen over frames 1-5 */}
             <img src="/store_img.png" alt="Jagyasi Mobiles storefront powered by Mahalaxmi Telecom" />
           </div>
 
@@ -140,6 +142,7 @@ export default function Home() {
             </div>
           </div>
         </div>
+        <ScrollFlythrough takeover />
       </section>
     </main>
     <StoreOutletBrandsSection />

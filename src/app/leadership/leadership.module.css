@@ -1,0 +1,25 @@
+.topSection{background:#f5f1eb;border-bottom:1px solid #ece7dd;padding:88px 0 84px}
+.topContainer{width:min(100% - 64px,1280px);margin:50px auto}
+.eyebrow{display:flex;align-items:center;gap:12px;margin:0 0 26px;color:#c19a5f;font-size:12px;font-weight:700;letter-spacing:3px;text-transform:uppercase}
+.eyebrow::before{content:"";width:36px;height:1px;background:#c19a5f;display:block}
+.topTitle{margin:0;font-family:Georgia,"Times New Roman",serif;font-size:clamp(36px,4.2vw,52px);font-weight:400;letter-spacing:-1.6px;line-height:1.05;color:#13100e}
+.topTitle em{color:#c19a5f;font-style:normal;font-weight:400}
+.topTitleGold{color:#c19a5f}
+.topIntro{margin:18px 0 0;max-width:620px;color:#6b6560;font-size:14px;line-height:1.7}
+
+.boardSection{background:#fffdfa;padding:88px 0 90px;border-top:1px solid #ece7dd}
+.boardContainer{width:min(100% - 64px,1280px);margin:0 auto}
+.boardTitle{margin:18px 0 0;font-family:Georgia,"Times New Roman",serif;font-size:36px;font-weight:400;letter-spacing:-1px;line-height:1.08;color:#111;max-width:520px}
+.grid{margin-top:48px;display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+.card{background:#fffdfa;border:1px solid #e8e2d6;border-radius:14px;padding:36px 32px 28px;min-height:340px;display:flex;flex-direction:column}
+.cardActive{border-color:#c19a5f;background:#fffdfa}
+.avatar{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;font-size:15px;font-weight:600;letter-spacing:0.5px}
+.avatarFilled{background:#c19a5f;color:#1a1008}
+.avatarOutline{background:#fff;border:1px solid #e8e2d6;color:#c19a5f}
+.cardName{margin:24px 0 0;font-size:16px;font-weight:600;color:#111;letter-spacing:-0.2px}
+.cardRole{margin:6px 0 0;color:#8a8580;font-size:10px;font-weight:600;letter-spacing:1.6px;text-transform:uppercase}
+.cardBio{margin:16px 0 0;color:#6b6560;font-size:12.5px;line-height:1.65;flex:1}
+.cardLink{margin-top:22px;color:#c19a5f;font-size:9px;font-weight:700;letter-spacing:1.8px;text-transform:uppercase;text-decoration:none}
+.cardLinkMuted{color:#9a9590}
+@media(max-width:980px){.grid{grid-template-columns:1fr 1fr}}
+@media(max-width:560px){.grid{grid-template-columns:1fr}.boardTitle{font-size:28px}.topContainer,.boardContainer{width:min(100% - 32px,1280px)}}

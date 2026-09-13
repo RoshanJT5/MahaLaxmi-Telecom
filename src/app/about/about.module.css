@@ -65,6 +65,7 @@
 	background: #faf9f6;
 	color: #1d1815;
 	border-bottom: 1px solid #e5e0d8;
+	overflow: clip;
 }
 
 .storyContainer {
@@ -84,10 +85,12 @@
 	object-position: center;
 	border-radius: 6px;
 	display: block;
+	will-change: transform, opacity;
 }
 
 .storyCopy {
 	min-width: 0;
+	will-change: transform, opacity;
 }
 
 .storyEyebrow {
@@ -211,12 +214,11 @@
 	color: #bd884e;
 }
 
-/* Right 2×2 grid */
+/* Right 2×2 grid — quadrant cross only, no outer box */
 .statsGrid {
 	display: grid;
 	grid-template-columns: 1fr 1fr;
-	border-top: 1px solid #ddd6cd;
-	border-left: 1px solid #ddd6cd;
+	border: none;
 }
 
 .statCard {
@@ -224,8 +226,29 @@
 	flex-direction: column;
 	gap: 10px;
 	padding: 36px 32px 32px;
-	border-right: 1px solid #ddd6cd;
-	border-bottom: 1px solid #ddd6cd;
+	border: none;
+	transition: background-color 0.3s ease;
+}
+
+.statCard:hover {
+	background: #e5e0d8;
+}
+
+.statCard:nth-child(1) {
+	border-right: 5px solid #ddd6cd;
+	border-bottom: 5px solid #ddd6cd;
+}
+
+.statCard:nth-child(2) {
+	border-bottom: 5px solid #ddd6cd;
+}
+
+.statCard:nth-child(3) {
+	border-right: 5px solid #ddd6cd;
+}
+
+.statCard:nth-child(4) {
+	border: none;
 }
 
 .statNumber {
@@ -333,7 +356,7 @@
 .valuesEyebrow {
 	margin: 0 0 20px;
 	color: #bd884e;
-	font-size: 10px;
+	font-size: 12px;
 	font-weight: 700;
 	letter-spacing: 2.5px;
 	line-height: 1.4;
@@ -347,7 +370,7 @@
 	font-weight: 400;
 	letter-spacing: -2px;
 	line-height: 1.06;
-	max-width: 560px;
+	max-width: 700px;
 }
 
 .valuesTitleAccent {
@@ -377,14 +400,14 @@
 }
 
 .valuesItemTitle {
-	font-size: 13px;
+	font-size: 18px;
 	font-weight: 700;
 	color: #1d1815;
 	letter-spacing: 0.01em;
 }
 
 .valuesItemDesc {
-	font-size: 13px;
+	font-size: 15px;
 	color: #77716c;
 	line-height: 1.6;
 	margin: 0;
@@ -470,6 +493,17 @@
 		grid-template-columns: 1fr;
 	}
 
+	.statCard:nth-child(1),
+	.statCard:nth-child(2),
+	.statCard:nth-child(3) {
+		border-right: none;
+		border-bottom: 5px solid #ddd6cd;
+	}
+
+	.statCard:nth-child(4) {
+		border: none;
+	}
+
 	.cgFace {
 		width: 200px;
 		height: 280px;
@@ -493,9 +527,12 @@
 .categoriesSection {
 	background: #faf9f6;
 	color: #1d1815;
+	margin-bottom: -1px;
+	border-bottom: none;
 }
 
 /* Tall outer div — gives scroll room to drive rotation */
+.categoriesSection { background: #faf9f6; }
 .cgOuter {
 	height: 500vh;
 	position: relative;
@@ -505,7 +542,7 @@
 .cgSticky {
 	position: sticky;
 	top: 0;
-	height: 115vh;
+	height: 100vh;
 	display: flex;
 	align-items: center;
 	justify-content: center;

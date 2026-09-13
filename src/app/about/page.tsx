@@ -215,13 +215,23 @@ export default function AboutPage() {
         {/* ── 2. Story ──────────────────────────────────────────────────── */}
         <section className={styles.storySection}>
           <div className={styles.storyContainer}>
-            <img
+            <motion.img
               src="/page-section1/store-detail.jpg"
               alt="Inside a Mahalaxmi Telecom retail outlet"
               className={styles.storyImage}
+              initial={{ opacity: 0, x: -72, scale: 0.98 }}
+              whileInView={{ opacity: 1, x: 0, scale: 1 }}
+              viewport={{ once: true, amount: 0.35 }}
+              transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
             />
 
-            <div className={styles.storyCopy}>
+            <motion.div
+              className={styles.storyCopy}
+              initial={{ opacity: 0, x: 72 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true, amount: 0.35 }}
+              transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1], delay: 0.14 }}
+            >
               <p className={styles.storyEyebrow}>Our Retail Philosophy</p>
               <h2 className={styles.storyTitle}>
                 Retail you can walk<br />into, touch and trust.
@@ -233,25 +243,36 @@ export default function AboutPage() {
                 our stores and our partner franchisees thriving.
               </p>
 
-              <ul className={styles.storyHighlights}>
-                <li className={styles.storyHighlightItem}>
-                  <span className={styles.storyHighlightTitle}>Physical-first retail</span>
-                  <span className={styles.storyHighlightDesc}>Hands-on testing of every device, every visit, before you buy.</span>
-                </li>
-                <li className={styles.storyHighlightItem}>
-                  <span className={styles.storyHighlightTitle}>Multi-city presence</span>
-                  <span className={styles.storyHighlightDesc}>Stores across Metro, Mini Metro and Tier 1 to Tier 3 towns.</span>
-                </li>
-                <li className={styles.storyHighlightItem}>
-                  <span className={styles.storyHighlightTitle}>Distribution-grade sourcing</span>
-                  <span className={styles.storyHighlightDesc}>Two decades of brand relationships behind every shelf.</span>
-                </li>
-                <li className={styles.storyHighlightItem}>
-                  <span className={styles.storyHighlightTitle}>Four brands, one standard</span>
-                  <span className={styles.storyHighlightDesc}>Consistent quality and service across every store format.</span>
-                </li>
-              </ul>
-            </div>
+              <motion.ul
+                className={styles.storyHighlights}
+                initial="hidden"
+                whileInView="show"
+                viewport={{ once: true, amount: 0.3 }}
+                variants={{
+                  hidden: {},
+                  show: { transition: { staggerChildren: 0.08, delayChildren: 0.35 } },
+                }}
+              >
+                {[
+                  ['Physical-first retail', 'Hands-on testing of every device, every visit, before you buy.'],
+                  ['Multi-city presence', 'Stores across Metro, Mini Metro and Tier 1 to Tier 3 towns.'],
+                  ['Distribution-grade sourcing', 'Two decades of brand relationships behind every shelf.'],
+                  ['Four brands, one standard', 'Consistent quality and service across every store format.'],
+                ].map(([title, desc]) => (
+                  <motion.li
+                    key={title}
+                    className={styles.storyHighlightItem}
+                    variants={{
+                      hidden: { opacity: 0, y: 14 },
+                      show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] } },
+                    }}
+                  >
+                    <span className={styles.storyHighlightTitle}>{title}</span>
+                    <span className={styles.storyHighlightDesc}>{desc}</span>
+                  </motion.li>
+                ))}
+              </motion.ul>
+            </motion.div>
           </div>
         </section>
 
@@ -291,9 +312,8 @@ export default function AboutPage() {
             <div className={styles.valuesCopy}>
               <p className={styles.valuesEyebrow}>Why We Exist</p>
               <h2 className={styles.valuesTitle}>
-                Mahalaxmi Telecom —<br />
-                built for trust<br />
-                <span className={styles.valuesTitleAccent}>and long-term value.</span>
+                Mahalaxmi Telecom built for trust
+                <span className={styles.valuesTitleAccent}> and long-term value.</span>
               </h2>
 
               <ul className={styles.valuesList}>

@@ -479,7 +479,7 @@
 	width: min(100% - 136px, 1500px);
 	min-height: 670px;
 	margin: 0 auto;
-	padding: 82px 0 112px;
+	padding: 82px 0 48px;
 	display: grid;
 	grid-template-columns: minmax(500px, 0.92fr) minmax(490px, 1.2fr);
 	gap: clamp(70px, 0vw, 132px);
@@ -494,6 +494,7 @@
 	overflow: hidden;
 	border-radius: 3px;
 	background: #0d0e0e;
+	position: relative;
 }
 
 .aboutMedia img {
@@ -568,7 +569,7 @@
 	.aboutContainer {
 		width: min(100% - 40px, 620px);
 		min-height: auto;
-		padding: 72px 0 88px;
+		padding: 72px 0 40px;
 		grid-template-columns: 1fr;
 		gap: 28px;
 	}
