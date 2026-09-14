@@ -1,0 +1,35 @@
+.root{position:fixed;inset:0;z-index:204;pointer-events:none;visibility:hidden}
+.rootOpen{pointer-events:auto;visibility:visible}
+.overlay{position:absolute;inset:0;background:#000;opacity:0}
+.panel{position:absolute;top:0;right:0;bottom:0;width:min(620px,94vw);overflow-y:auto;overflow-x:hidden;padding:40px 48px 56px;border-left:1px solid #e8e2d6;transform:translateX(103%);transition-property:transform;transition-timing-function:cubic-bezier(0.65,0,0.35,1);pointer-events:auto;box-shadow:-30px 0 80px rgba(0,0,0,0.25)}
+.panelOpen{transform:none}
+.content{display:flex;flex-direction:column;opacity:0}
+.topRow{display:flex;align-items:center;justify-content:space-between}
+.closeBtn{width:48px;height:48px;display:grid;place-items:center;border-radius:50%;border:1px solid currentColor;background:transparent;color:inherit;cursor:pointer;opacity:0.7;transition:opacity 0.2s ease,transform 0.2s ease}
+.closeBtn:hover{opacity:1;transform:rotate(90deg)}
+.closeBtn svg{width:44%;height:44%}
+.counter{font-size:14px;letter-spacing:1px;opacity:0.6}
+.divider{height:1px;background:currentColor;opacity:0.16;margin:22px 0 26px}
+.eyebrow{margin:0 0 14px;color:#c19a5f;font-size:12px;font-weight:700;letter-spacing:3px;text-transform:uppercase}
+.name{margin:0;font-family:Georgia,"Times New Roman",serif;font-size:clamp(32px,3.4vw,44px);font-weight:400;letter-spacing:-1px;line-height:1.05}
+.role{margin:10px 0 0;color:#8a8580;font-size:11px;font-weight:600;letter-spacing:1.6px;text-transform:uppercase}
+.photo{margin:26px 0 0;border-radius:14px;overflow:hidden;border:1px solid #e8e2d6;background:#141414}
+.photo img{display:block;width:100%;max-height:52vh;aspect-ratio:4/5;object-fit:cover;object-position:top}
+.bio{margin:24px 0 0;color:#6b6560;font-size:14px;line-height:1.7}
+.bio p{margin:0 0 16px}
+.bio p:last-child{margin-bottom:0}
+.navRow{margin:30px 0 0;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.navBtns{display:flex;gap:10px}
+.navBtn{display:inline-flex;align-items:center;gap:8px;padding:12px 18px;border:1px solid #c9c1b8;background:transparent;color:#302923;font-family:inherit;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:background 0.18s ease,border-color 0.18s ease}
+.navBtn:hover{border-color:#302923;background:#f0ece6}
+.linkedin{width:24px;opacity:0.55;transition:opacity 0.2s ease;color:inherit}
+.linkedin:hover{opacity:1}
+.linkedin svg{display:block;width:100%;height:auto}
+@media(max-width:640px){
+  .panel{width:100%;padding:32px 24px 48px}
+  .photo img{max-height:60vh}
+}
+@media(prefers-reduced-motion:reduce){
+  .panel{transition:none}
+  .closeBtn{transition:none}
+}
