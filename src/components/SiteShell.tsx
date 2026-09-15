@@ -1,20 +1,56 @@
  'use client';
 
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 
 type SiteShellProps = {
   children: ReactNode;
   transparentOnTop?: boolean;
 };
 
-const navigation = [
-  ['/', 'Home'],
-  ['/about', 'About'],
-  ['/brands', 'Brands'],
-  ['/franchise', 'Franchise'],
-  ['/leadership', 'Leadership'],
-  ['/contact', 'Contact'],
-] as const;
+type NavChild = {
+  href: string;
+  label: string;
+};
+
+type NavEntry = {
+  href: string;
+  label: string;
+  children?: NavChild[];
+};
+
+const navigation: NavEntry[] = [
+  {
+    href: '/about',
+    label: 'Company',
+    children: [
+      { href: '/about', label: 'About us' },
+      { href: '/our-story', label: 'Our story' },
+      { href: '/director-message', label: "Director's message" },
+      { href: '/leadership', label: 'Leadership' },
+      { href: '/vision-mission', label: 'Vision & mission' },
+    ],
+  },
+  {
+    href: '/brands',
+    label: 'Brands',
+    children: [
+      { href: '/brands', label: 'Our brands' },
+      { href: '/brands#brand-partners', label: 'Authorized partners' },
+    ],
+  },
+  {
+    href: '/franchise',
+    label: 'Franchise',
+    children: [
+      { href: '/franchise', label: 'Franchise opportunity' },
+      { href: '/#why-partner-home', label: 'Why partner with us' },
+      { href: '/business-model', label: 'Business model' },
+      { href: '/franchise', label: 'Store franchise plan' },
+      { href: '/faq', label: 'Franchise FAQs' },
+    ],
+  },
+  { href: '/contact', label: 'Contact' },
+];
 
 const socialLinks = [
   ['instagram.png', 'Instagram'],
@@ -26,6 +62,9 @@ const socialLinks = [
 
 export default function SiteShell({ children, transparentOnTop = false }: SiteShellProps) {
   const [hasScrolled, setHasScrolled] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [openMenu, setOpenMenu] = useState<string | null>(null);
+  const navRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     if (!transparentOnTop) {
@@ -38,6 +77,24 @@ export default function SiteShell({ children, transparentOnTop = false }: SiteSh
 
     return () => window.removeEventListener('scroll', updateScrollState);
   }, [transparentOnTop]);
+
+  useEffect(() => {
+    if (!openMenu) return;
+    const onPointerDown = (event: MouseEvent) => {
+      if (navRef.current && !navRef.current.contains(event.target as Node)) {
+        setOpenMenu(null);
+      }
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpenMenu(null);
+    };
+    document.addEventListener('mousedown', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', onPointerDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [openMenu]);
 
   const headerClassName = [
     'site-top-header',
@@ -59,16 +116,51 @@ export default function SiteShell({ children, transparentOnTop = false }: SiteSh
             </span>
           </a>
 
-          <nav className="main-nav" id="main-nav" aria-label="Main navigation">
-            <button className="nav-toggle" id="nav-toggle" aria-label="Toggle navigation" aria-expanded="false" type="button">
+          <nav className="main-nav" id="main-nav" aria-label="Main navigation" ref={navRef}>
+            <button className="nav-toggle" id="nav-toggle" aria-label="Toggle navigation" aria-expanded={menuOpen} type="button" onClick={() => setMenuOpen((open) => !open)}>
               <span className="nav-toggle-bar" />
               <span className="nav-toggle-bar" />
               <span className="nav-toggle-bar" />
             </button>
-            <ul className="nav-list" id="nav-list">
-              {navigation.map(([href, label]) => (
-                <li className="nav-item" key={href}>
-                  <a href={href} className="nav-link">{label}</a>
+            <ul className={`nav-list${menuOpen ? ' nav-open' : ''}`} id="nav-list">
+              {navigation.map((entry) => (
+                <li
+                  className={`nav-item${entry.children ? ' has-children' : ''}${openMenu === entry.label ? ' menu-open' : ''}`}
+                  key={entry.label}
+                >
+                  {entry.children ? (
+                    <button
+                      type="button"
+                      className="nav-link nav-parent"
+                      aria-haspopup="true"
+                      aria-expanded={openMenu === entry.label}
+                      onClick={() => {
+                        setOpenMenu((current) => (current === entry.label ? null : entry.label));
+                        setMenuOpen(true);
+                      }}
+                    >
+                      {entry.label}
+                    </button>
+                  ) : (
+                    <a href={entry.href} className="nav-link" onClick={() => { setMenuOpen(false); setOpenMenu(null); }}>
+                      {entry.label}
+                    </a>
+                  )}
+                  {entry.children && (
+                    <ul className="submenu" aria-label={`${entry.label} submenu`}>
+                      {entry.children.map((child) => (
+                        <li className="submenu-item" key={child.label}>
+                          <a
+                            href={child.href}
+                            className="submenu-link"
+                            onClick={() => { setMenuOpen(false); setOpenMenu(null); }}
+                          >
+                            {child.label}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </li>
               ))}
             </ul>

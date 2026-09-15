@@ -105,6 +105,24 @@ export default function LeadershipPage() {
             </div>
           </div>
         </section>
+
+        <section className={styles.messageSection} aria-label="Message from the CEO">
+          <div className={styles.messageContainer}>
+            <div className={styles.messageCopy}>
+              <p className={styles.eyebrow}>Director&apos;s Message</p>
+              <h2 className={styles.messageName}>Pradip<br />Jagyasi</h2>
+              <p className={styles.messageRole}>CEO &amp; Co-Founder <span aria-hidden="true">✦</span></p>
+              <blockquote className={styles.messageQuote}>
+                True innovation <em>doesn&apos;t</em> come from following the <em>market trends</em>; it comes from anticipating the needs your customers <em>don&apos;t even know they</em> have yet. Build for tomorrow, today.
+              </blockquote>
+              <p className={styles.messageSign}>Mahalaxmi Telecom Private Limited</p>
+            </div>
+            <div className={styles.messageMedia}>
+              <span className={styles.messageInitial} aria-hidden="true">P</span>
+              <img src={DIRECTORS[0].photo} alt="Pradip Jagyasi, CEO & Co-Founder" loading="lazy" />
+            </div>
+          </div>
+        </section>
       </main>
       <TeamDrawer
         open={drawerOpen}

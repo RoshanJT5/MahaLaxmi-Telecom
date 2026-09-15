@@ -1,5 +1,61 @@
 import SiteShell from '@/components/SiteShell';
+import styles from './vision-mission.module.css';
+
+const PILLARS = [
+  { title: 'Seamless Connectivity', desc: 'Reliable access to the digital world for every customer.' },
+  { title: 'Expert Guidance', desc: 'Honest, knowledgeable advice at every store visit.' },
+  { title: 'Affordable For All', desc: 'Long-term value and support at fair, transparent prices.' },
+];
 
 export default function VisionMissionPage() {
-  return <SiteShell><main id="main-content"><section id="vision-mission" className="vm-section"><div className="container vm-container"><div className="vm-block vm-vision" id="vm-vision"><span className="vm-icon" aria-hidden="true" /><p className="section-eyebrow">Vision</p><h2 className="vm-statement">To become the most trusted multi-brand mobile and accessory retail chain in India.</h2><p className="vm-tag" id="vm-tag">One Team, One Network</p><p className="vm-support-text">Offering innovative products, seamless shopping experiences and lasting customer relationships, across every store we open and every partner we work with.</p></div><div className="vm-block vm-mission" id="vm-mission"><p className="section-eyebrow">Why We Exist</p><h2 className="section-title">Our Mission</h2><blockquote className="vm-mission-quote"><p>To empower every individual and community by making seamless connectivity, smart technology and expert guidance accessible to all, bridging the gap between people and the digital world.</p></blockquote><p className="vm-mission-support">Committed to delivering excellent service, honest guidance and long-term support, all at affordable prices.</p><div className="mission-pillars" id="mission-pillars"><div className="mission-pillar" id="pillar-connectivity"><span className="pillar-icon" aria-hidden="true" /><h4 className="pillar-title">Seamless Connectivity</h4><p className="pillar-desc">Reliable access to the digital world for every customer.</p></div><div className="mission-pillar" id="pillar-guidance"><span className="pillar-icon" aria-hidden="true" /><h4 className="pillar-title">Expert Guidance</h4><p className="pillar-desc">Honest, knowledgeable advice at every store visit.</p></div><div className="mission-pillar" id="pillar-affordable"><span className="pillar-icon" aria-hidden="true" /><h4 className="pillar-title">Affordable For All</h4><p className="pillar-desc">Long-term value and support at fair, transparent prices.</p></div></div></div></div></section></main></SiteShell>;
+  return (
+    <SiteShell transparentOnTop>
+      <main id="main-content">
+        <section className={styles.heroSection} aria-label="Our vision">
+          <div className={styles.heroBg} aria-hidden="true" />
+          <div className={styles.heroContainer}>
+            <p className={styles.heroEyebrow}>Vision</p>
+            <h1 className={styles.heroTitle}>
+              To become the most trusted multi-brand mobile and accessory retail chain in <em>India.</em>
+            </h1>
+            <p className={styles.heroTag}>One Team, One Network</p>
+            <p className={styles.heroSupport}>
+              Offering innovative products, seamless shopping experiences and lasting customer
+              relationships, across every store we open and every partner we work with.
+            </p>
+          </div>
+        </section>
+
+        <section className={styles.missionSection} aria-label="Our mission">
+          <div className={styles.missionContainer}>
+            <div className={styles.missionIntro}>
+              <div className={styles.missionSticky}>
+                <p className={styles.eyebrow}>Why We Exist</p>
+                <h2 className={styles.missionTitle}>Our Mission</h2>
+              </div>
+            </div>
+            <div className={styles.missionBody}>
+              <p className={styles.missionLead}>
+                To empower every individual and community by making seamless connectivity, smart
+                technology and expert guidance accessible to all, bridging the gap between people
+                and the digital world.
+              </p>
+              <p className={styles.missionSupport}>
+                Committed to delivering excellent service, honest guidance and long-term support,
+                all at affordable prices.
+              </p>
+              <div className={styles.pillars}>
+                {PILLARS.map((pillar) => (
+                  <div className={styles.pillar} key={pillar.title}>
+                    <h3 className={styles.pillarTitle}>{pillar.title}</h3>
+                    <p className={styles.pillarDesc}>{pillar.desc}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </SiteShell>
+  );
 }

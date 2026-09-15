@@ -83,9 +83,11 @@ export default function BrandsPage() {
           </div>
         </section>
 
-        <CircularTestimonials testimonials={STORE_TESTIMONIALS} autoplay={true} />
+        <div id="store-formats">
+          <CircularTestimonials testimonials={STORE_TESTIMONIALS} autoplay={true} />
+        </div>
 
-        <section className={`relative ${styles.partnersSection}`} aria-label="Authorized partners" style={{background:'#e5e0d8',paddingBottom:0,borderBottom:'1px solid #ece7dd', display:'grid', justifyContent:'center', alignItems:'center'}}>
+        <section id="brand-partners" className={`relative ${styles.partnersSection}`} aria-label="Authorized partners" style={{background:'#e5e0d8',paddingBottom:0,borderBottom:'1px solid #ece7dd', display:'grid', justifyContent:'center', alignItems:'center'}}>
           <ContainerStagger className={`${styles.partnersContainer} relative z-[9999] place-self-center text-center`} style={{paddingBottom: 28, paddingTop: 48, margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
             <ContainerAnimated>
               <p className={styles.partnersEyebrow}>Our Authorized Partners</p>

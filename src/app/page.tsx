@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import SiteShell from '@/components/SiteShell';
 import { InfiniteSlider } from '@/components/InfiniteSlider';
 import ScrollFlythrough from '@/components/ScrollFlythrough';
+import { Typewriter } from '@/components/ui/typewriter-text';
 import styles from './page.module.css';
 
 const heroImages = [
@@ -15,6 +16,8 @@ const heroImages = [
   '/page-section1/store-hero.jpg',
 ];
 
+const unsplash = (id: string) => `https://images.unsplash.com/photo-${id}?w=600&q=70&auto=format&fit=crop`;
+
 export default function Home() {
   return <SiteShell transparentOnTop>
     <main id="main-content">
@@ -23,7 +26,7 @@ export default function Home() {
         <div className={`container ${styles.heroContainer}`}>
           <div className={styles.heroContent}>
             <p className={styles.heroEyebrow}>Trusted Multi-Brand Mobile &amp; Accessory Retail Chain</p>
-            <h1 className={styles.heroTitle}>Two Decades of Telecom Trust.<br /> <span className={styles.heroTitleAccent}>One Growing Retail Family.</span></h1>
+            <h1 className={styles.heroTitle}><TypewriterHero /></h1>
             <p className={styles.heroSubtitle}>Mahalaxmi Telecom Private Limited is a Nandurbar-headquartered retail group built on more than twenty years of telecom distribution experience. Through four retail formats, Jagyasi Mobile, MM Mobile, Phone Cafe and Mobile Point, we bring the latest smartphones, tablets, wearables and accessories to customers across Maharashtra, while opening the same trusted brand to entrepreneurs through our Retail Store Chain Franchise Model.</p>
             <div className={styles.heroActions}>
               <a href="/franchise" className={`${styles.heroButton} ${styles.heroButtonPrimary}`}>Explore Franchise Opportunity</a>
@@ -58,12 +61,12 @@ export default function Home() {
             {/* Col 1 — down (speed A) */}
             <InfiniteSlider direction="vertical" gap={8} duration={30}>
               {[
-                { src: '/page-section1/products.jpg',     alt: 'Smartphones on display' },
-                { src: '/page-section1/store-detail.jpg', alt: 'Store detail view' },
-                { src: '/footer-store.jpg',               alt: 'Store exterior' },
-                { src: '/page-section1/accessories.jpg',     alt: 'Smartphones on display' },
-                { src: '/page-section1/store-hero.jpg', alt: 'Store detail view' },
-                { src: '/storefront-reference.jpg',               alt: 'Store exterior' },
+                { src: unsplash('1511707171634-5f897ff02aa9'), alt: 'Smartphone in hand' },
+                { src: unsplash('1598327105666-5b89351aff97'), alt: 'Latest smartphone' },
+                { src: unsplash('1441986300917-64674bd600d8'), alt: 'Retail store interior' },
+                { src: unsplash('1546868871-7041f2a55e12'),   alt: 'Smartwatch on wrist' },
+                { src: unsplash('1592750475338-74b7b21085ab'), alt: 'Smartphone close-up' },
+                { src: unsplash('1505740420928-5e560c06d30e'), alt: 'Headphones on display' },
               ].map(({ src, alt }) => (
                 <img key={src} src={src} alt={alt} className={styles.sliderImg} />
               ))}
@@ -71,11 +74,11 @@ export default function Home() {
             {/* Col 2 — up (speed B) */}
             <InfiniteSlider direction="vertical" reverse gap={8} duration={24}>
               {[
-                { src: '/page-section1/accessories.jpg',  alt: 'Mobile accessories' },
-                { src: '/page-section1/hero-store.jpg',   alt: 'Store interior' },
-                { src: '/storefront-reference.jpg',       alt: 'Storefront' },
-                { src: '/page-section1/products.jpg',   alt: 'Store interior' },
-                { src: '/footer-store.jpg',       alt: 'Storefront' },
+                { src: unsplash('1583394838336-acd977736f90'), alt: 'Audio accessories' },
+                { src: unsplash('1544244015-0df4b3ffc6b0'),   alt: 'Tablet with stylus' },
+                { src: unsplash('1555529669-e69e7aa0ba9a'),   alt: 'Store shelves' },
+                { src: unsplash('1579586337278-3befd40fd17a'), alt: 'Smartwatch' },
+                { src: unsplash('1606220945770-b5b6c2c55bf1'), alt: 'Wireless earbuds' },
               ].map(({ src, alt }) => (
                 <img key={src} src={src} alt={alt} className={styles.sliderImg} />
               ))}
@@ -83,11 +86,11 @@ export default function Home() {
             {/* Col 3 — down (speed A, same as col 1) */}
             <InfiniteSlider direction="vertical" gap={8} duration={30}>
               {[
-                { src: '/page-section1/store-hero.jpg',   alt: 'Store hero shot' },
-                { src: '/store_img.png',                  alt: 'Mahalaxmi storefront' },
-                { src: '/jm-showroom-hero.png',           alt: 'JM showroom' },
-                { src: '/page-section1/accessories.jpg',  alt: 'Mobile accessories' },
-                { src: '/page-section1/hero-store.jpg',   alt: 'Store interior' },
+                { src: unsplash('1508685096489-7aacd43bd3b1'), alt: 'Wearable on wrist' },
+                { src: unsplash('1519389950473-47ba0277781c'), alt: 'Latest gadgets' },
+                { src: unsplash('1434493789847-2f02dc6ca35d'), alt: 'Smartwatch series' },
+                { src: unsplash('1590658268037-6bf12165a8df'), alt: 'Earbuds case' },
+                { src: unsplash('1510557880182-3d4d3cba35a5'), alt: 'Smartphone display' },
               ].map(({ src, alt }) => (
                 <img key={src} src={src} alt={alt} className={styles.sliderImg} />
               ))}
@@ -95,11 +98,11 @@ export default function Home() {
             {/* Col 4 — up (speed B, same as col 2) */}
             <InfiniteSlider direction="vertical" reverse gap={8} duration={24}>
               {[
-                { src: '/page-section1/products.jpg',     alt: 'Products display' },
-                { src: '/page-section1/store-detail.jpg', alt: 'Store detail' },
-                { src: '/page-section1/accessories.jpg',  alt: 'Accessories' },
-                { src: '/store_img.png',                  alt: 'Mahalaxmi storefront' },
-                { src: '/jm-showroom-hero.png',           alt: 'JM showroom' },
+                { src: unsplash('1580910051074-3eb694886505'), alt: 'Smartphone on desk' },
+                { src: unsplash('1561154464-82e9adf32764'),   alt: 'Tablet range' },
+                { src: unsplash('1498049794561-7780e7231661'), alt: 'Electronics desk' },
+                { src: unsplash('1550009158-9ebf69173e03'),   alt: 'Gaming gadgets' },
+                { src: unsplash('1601784551446-20c9e07cdbdb'), alt: 'Phone with accessories' },
               ].map(({ src, alt }) => (
                 <img key={src} src={src} alt={alt} className={styles.sliderImg} />
               ))}
@@ -178,28 +181,28 @@ const outletBrands = [
     initials: 'JM',
     name: 'Jagyasi Mobile',
     description: 'Our flagship, company-operated format focused on full-range mobile retail and premium in-store experience.',
-    image: '/page-section1/hero-store.jpg',
+    image: 'https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?w=800&q=80&auto=format&fit=crop',
   },
   {
     id: 'mm',
     initials: 'MM',
     name: 'MM Mobile',
     description: 'A standard-format store built for consistent, everyday mobile and accessory retail.',
-    image: '/page-section1/store-detail.jpg',
+    image: 'https://images.unsplash.com/photo-1567401893414-76b7b1e5a7a5?w=800&q=80&auto=format&fit=crop',
   },
   {
     id: 'pc',
     initials: 'PC',
     name: 'Phone Cafe',
     description: 'A compact, neighbourhood-friendly format for accessible mobile shopping.',
-    image: '/page-section1/store-hero.jpg',
+    image: 'https://images.unsplash.com/photo-1556740738-b6a63e27c4df?w=800&q=80&auto=format&fit=crop',
   },
   {
     id: 'mp',
     initials: 'MP',
     name: 'Mobile Point',
     description: 'A focused retail point for devices and accessories in emerging markets.',
-    image: '/page-section1/products.jpg',
+    image: 'https://images.unsplash.com/photo-1607083206869-4c7672e72a8a?w=800&q=80&auto=format&fit=crop',
   },
 ];
 
@@ -446,6 +449,44 @@ function CategoryRow({ title, children }: { title: string; children: string }) {
       <h3>{title}</h3>
       <p>{children}</p>
     </div>
+  );
+}
+
+const HERO_LINE_1 = 'Two Decades of Telecom Trust.';
+const HERO_LINES_2 = [
+  'One Growing Retail Family.',
+  'Your partner in long-term growth.',
+  "Let's build the future together.",
+];
+const HERO_SPEED = 45;
+
+function TypewriterHero() {
+  const [reduced, setReduced] = useState(false);
+
+  useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setReduced(true);
+    }
+  }, []);
+
+  if (reduced) {
+    return (
+      <span aria-label={`${HERO_LINE_1} ${HERO_LINES_2[0]}`} role="text">
+        <span aria-hidden="true">{HERO_LINE_1}</span>
+        <br />
+        <span className={styles.heroTitleAccent} aria-hidden="true">{HERO_LINES_2[0]}</span>
+      </span>
+    );
+  }
+
+  return (
+    <span aria-label={`${HERO_LINE_1} ${HERO_LINES_2.join(' ')}`} role="text">
+      <span aria-hidden="true">{HERO_LINE_1}</span>
+      <br />
+      <span className={styles.heroTitleAccent} aria-hidden="true">
+        <Typewriter text={HERO_LINES_2} speed={HERO_SPEED} loop deleteSpeed={25} delay={2000} />
+      </span>
+    </span>
   );
 }
 

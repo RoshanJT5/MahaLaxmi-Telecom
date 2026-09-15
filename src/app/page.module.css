@@ -79,17 +79,36 @@
 	text-transform: uppercase;
 }
 
+.heroEyebrow {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.heroEyebrow::before {
+	content: "";
+	width: 36px;
+	height: 1px;
+	background: #ead9c2;
+	display: block;
+}
+
 .heroTitle {
 	width: 90vw;
 	max-width: none;
 	margin: 20px 0;
-	font-size: clamp(42px, 5.1vw, 78px);
+	font-size: clamp(42px, 4.5vw, 78px);
 	line-height: 1.04;
 	letter-spacing: -1px;
+	font-family: "Instrument Serif", ui-serif, Georgia, serif;
+	/* font-style: italic; */
 }
 .heroTitleAccent {
 	color: #d49d27;
+	font-family: "Instrument Serif", ui-serif, Georgia, serif;
+	font-style: italic;
 }
+
 
 .heroSubtitle {
 	max-width: 630px;
@@ -139,6 +158,31 @@
 	line-height: 1;
 	transition: transform 500ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 500ms cubic-bezier(0.22, 1, 0.36, 1);
 	white-space: nowrap;
+	position: relative;
+	overflow: hidden;
+	isolation: isolate;
+}
+
+.heroButtonPrimary::after {
+	content: "";
+	position: absolute;
+	top: -20%;
+	bottom: -20%;
+	left: -70%;
+	width: 45%;
+	background: linear-gradient(105deg, transparent, rgba(255, 255, 255, 0.55), transparent);
+	transform: skewX(-20deg);
+	animation: none;
+	pointer-events: none;
+}
+
+.heroButtonPrimary:hover::after {
+	animation: goldSheen 1.6s ease-in-out infinite;
+}
+
+@keyframes goldSheen {
+	0% { left: -70%; }
+	55%, 100% { left: 135%; }
 }
 
 .heroButtonPrimary:hover,
@@ -150,6 +194,17 @@
 .heroButtonSecondary {
 	background: transparent;
 	align-content: center;
+	transition: transform 400ms cubic-bezier(0.22, 1, 0.36, 1), background 400ms ease, border-color 400ms ease, box-shadow 400ms ease;
+}
+
+.heroButtonSecondary:hover,
+.heroButtonSecondary:focus-visible {
+	transform: translateY(-2px);
+	background: rgba(255, 255, 255, 0.12);
+	backdrop-filter: blur(14px) saturate(1.3);
+	-webkit-backdrop-filter: blur(14px) saturate(1.3);
+	border-color: rgba(255, 255, 255, 0.75);
+	box-shadow: 0 8px 32px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.28);
 }
 
 .heroStats {
@@ -212,12 +267,23 @@
 
 .categoriesEyebrow {
 	margin: 0 0 22px;
+	display: flex;
+	align-items: center;
+	gap: 12px;
 	color: #bd884e;
 	font-size: 10px;
 	font-weight: 700;
 	letter-spacing: 2.4px;
 	line-height: 1.4;
 	text-transform: uppercase;
+}
+
+.categoriesEyebrow::before {
+	content: "";
+	width: 36px;
+	height: 1px;
+	background: #bd884e;
+	display: block;
 }
 
 .categoriesTitle {
@@ -309,12 +375,23 @@
 
 .partnersEyebrow {
 	margin: 0 0 22px;
+	display: flex;
+	align-items: center;
+	gap: 12px;
 	color: #bd884e;
 	font-size: 10px;
 	font-weight: 700;
 	letter-spacing: 2.4px;
 	line-height: 1.4;
 	text-transform: uppercase;
+}
+
+.partnersEyebrow::before {
+	content: "";
+	width: 36px;
+	height: 1px;
+	background: #bd884e;
+	display: block;
 }
 
 .partnersDescription {
@@ -378,6 +455,10 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+	.heroButtonPrimary::after,
+	.heroButtonPrimary:hover::after {
+		animation: none;
+	}
 	.marqueeTrack {
 		animation: none;
 		transform: translateX(0);
@@ -511,12 +592,23 @@
 
 .aboutEyebrow {
 	margin: 0 0 25px;
+	display: flex;
+	align-items: center;
+	gap: 12px;
 	color: #bd884e;
 	font-size: 10px;
 	font-weight: 700;
 	letter-spacing: 2.4px;
 	line-height: 1.4;
 	text-transform: uppercase;
+}
+
+.aboutEyebrow::before {
+	content: "";
+	width: 36px;
+	height: 1px;
+	background: #bd884e;
+	display: block;
 }
 
 .aboutTitle {
@@ -610,12 +702,23 @@
 
 .outletBrandsEyebrow {
 	margin: 0 0 24px;
+	display: flex;
+	align-items: center;
+	gap: 12px;
 	color: #bd884e;
 	font-size: 10px;
 	font-weight: 700;
 	letter-spacing: 2.5px;
 	line-height: 1.4;
 	text-transform: uppercase;
+}
+
+.outletBrandsEyebrow::before {
+	content: "";
+	width: 36px;
+	height: 1px;
+	background: #bd884e;
+	display: block;
 }
 
 .outletBrandsTitle {
@@ -971,12 +1074,23 @@
 
 .whyPartnerEyebrow {
 	margin: 0 0 22px;
+	display: flex;
+	align-items: center;
+	gap: 12px;
 	color: #bd884e;
 	font-size: 10px;
 	font-weight: 700;
 	letter-spacing: 2.5px;
 	line-height: 1.4;
 	text-transform: uppercase;
+}
+
+.whyPartnerEyebrow::before {
+	content: "";
+	width: 36px;
+	height: 1px;
+	background: #bd884e;
+	display: block;
 }
 
 .whyPartnerTitle {
@@ -1112,12 +1226,24 @@
 .visionHomeEyebrow,
 .opportunityHomeEyebrow {
 	margin: 0 0 26px;
+	display: flex;
+	align-items: center;
+	gap: 12px;
 	color: #bd884e;
 	font-size: 10px;
 	font-weight: 700;
 	letter-spacing: 2.5px;
 	line-height: 1.4;
 	text-transform: uppercase;
+}
+
+.visionHomeEyebrow::before,
+.opportunityHomeEyebrow::before {
+	content: "";
+	width: 36px;
+	height: 1px;
+	background: #bd884e;
+	display: block;
 }
 
 .visionHomeTitle {

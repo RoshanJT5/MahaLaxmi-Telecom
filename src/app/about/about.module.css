@@ -48,7 +48,7 @@
 }
 
 .heroTitleAccent {
-	color: #bd884e;
+	color: #c19a5f;
 }
 
 .heroBody {
@@ -189,7 +189,7 @@
 	display: block;
 	width: 32px;
 	height: 1px;
-	background: #bd884e;
+	background: #c19a5f;
 	flex-shrink: 0;
 }
 
@@ -211,7 +211,7 @@
 	font-style: italic;
 	letter-spacing: -1px;
 	line-height: 1.1;
-	color: #bd884e;
+	color: #c19a5f;
 }
 
 /* Right 2×2 grid — quadrant cross only, no outer box */
@@ -374,7 +374,7 @@
 }
 
 .valuesTitleAccent {
-	color: #bd884e;
+	color: #c19a5f;
 }
 
 .valuesList {
@@ -680,6 +680,6 @@
 	width: 6px;
 	height: 6px;
 	border-radius: 50%;
-	background: #bd884e;
+	background: #c19a5f;
 }
 

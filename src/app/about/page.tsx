@@ -1,150 +1,11 @@
 'use client';
 
-import { useEffect, useLayoutEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   motion,
-  useScroll,
-  useTransform,
-  useSpring,
 } from 'framer-motion';
 import SiteShell from '@/components/SiteShell';
 import styles from './about.module.css';
-
-/* ── Category data ─────────────────────────────────────────────────────────── */
-const CATEGORIES = [
-  {
-    id: 'smartphones',
-    name: 'Smartphones',
-    desc: 'The latest devices from every major mobile brand, ready to test in-store.',
-    image: '/About-section/Smartphones.png',
-    bg: '#faf9f6',
-  },
-  {
-    id: 'tablets',
-    name: 'Tablets',
-    desc: 'A curated range for work, study and entertainment.',
-    image: '/About-section/Tablet.png',
-    bg: '#f5f1eb',
-  },
-  {
-    id: 'wearables',
-    name: 'Wearables',
-    desc: 'Smartwatches and fitness bands from trusted names.',
-    image: '/About-section/Watches.png',
-    bg: '#faf9f6',
-  },
-  {
-    id: 'accessories',
-    name: 'Accessories',
-    desc: 'Cases, chargers, audio and everyday mobile essentials.',
-    image: '/About-section/Accessories.png',
-    bg: '#f5f1eb',
-  },
-  {
-    id: 'electronics',
-    name: 'Electronics',
-    desc: 'Additional gadgets and lifestyle electronics by store format.',
-    image: '/About-section/Electornics.png',
-    bg: '#faf9f6',
-  },
-];
-
-/* ── Circular scroll gallery ────────────────────────────────────────────────── */
-function CircularGallery() {
-  const sectionRef = useRef<HTMLDivElement>(null);
-  const count = CATEGORIES.length;
-  // radius of the circle in px — cards sit on this ring
-  const RADIUS = 420;
-
-  const { scrollYProgress } = useScroll({
-    target: sectionRef,
-    offset: ['start start', 'end end'],
-  });
-
-  // Smooth spring on the scroll value so rotation feels physical
-  const smoothProgress = useSpring(scrollYProgress, {
-    stiffness: 60,
-    damping: 20,
-    restDelta: 0.001,
-  });
-
-  // Map 0→1 scroll progress to a full rotation (360°) so all 5 cards pass centre
-  const rotateY = useTransform(smoothProgress, [0, 1], [0, -360]);
-
-  return (
-    /* Tall outer section — gives scroll room */
-    <div ref={sectionRef} className={styles.cgOuter}>
-
-      {/* Sticky viewport — stays fixed while user scrolls */}
-      <div className={styles.cgSticky}>
-
-        {/* Header — fades out as scroll starts */}
-        <motion.div
-          className={styles.cgHeader}
-          style={{ opacity: useTransform(smoothProgress, [0, 0.12], [1, 0]) }}
-        >
-          <p className={styles.categoriesEyebrow}>What We Retail</p>
-          <h2 className={styles.categoriesTitle}>
-            Categories in every store<br />format.
-          </h2>
-          <p className={styles.cgHint}>Scroll to explore ↓</p>
-        </motion.div>
-
-        {/* 3-D scene */}
-        <div className={styles.cgScene}>
-          <motion.div
-            className={styles.cgRing}
-            style={{ rotateY }}
-          >
-            {CATEGORIES.map((cat, i) => {
-              const angle = (360 / count) * i;
-              return (
-                <div
-                  key={cat.id}
-                  className={styles.cgFace}
-                  style={{
-                    transform: `rotateY(${angle}deg) translateZ(${RADIUS}px)`,
-                    background: cat.bg,
-                  }}
-                >
-                  <div className={styles.cgImageWrap}>
-                    <img src={cat.image} alt={cat.name} className={styles.cgImage} />
-                  </div>
-                  <div className={styles.cgBody}>
-                    <h3 className={styles.cgName}>{cat.name}</h3>
-                    <p className={styles.cgDesc}>{cat.desc}</p>
-                  </div>
-                </div>
-              );
-            })}
-          </motion.div>
-        </div>
-
-        {/* Scroll progress dots */}
-        <div className={styles.cgDots} aria-hidden="true">
-          {CATEGORIES.map((cat, i) => (
-            <motion.span
-              key={cat.id}
-              className={styles.cgDot}
-              style={{
-                opacity: useTransform(
-                  smoothProgress,
-                  [(i / count) - 0.04, i / count, (i / count) + 0.04],
-                  [0.3, 1, 0.3]
-                ),
-                scale: useTransform(
-                  smoothProgress,
-                  [(i / count) - 0.04, i / count, (i / count) + 0.04],
-                  [1, 1.6, 1]
-                ),
-              }}
-            />
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
 
 /* ── Count-up hook ─────────────────────────────────────────────────────────── */
 function useCountUp(target: number, duration = 1800) {
@@ -301,12 +162,7 @@ export default function AboutPage() {
           </div>
         </section>
 
-        {/* ── 4. Categories ─────────────────────────────────────────────── */}
-        <section className={styles.categoriesSection}>
-          <CircularGallery />
-        </section>
-
-        {/* ── 5. Values / CTA ───────────────────────────────────────────── */}
+        {/* ── 4. Values / CTA ───────────────────────────────────────────── */}
         <section className={styles.valuesSection}>
           <div className={styles.valuesContainer}>
             <div className={styles.valuesCopy}>
