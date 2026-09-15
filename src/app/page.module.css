@@ -479,6 +479,19 @@
 		font-size: 14px;
 	}
 
+	.heroTitle {
+		width: 100%;
+		max-width: 100%;
+		overflow-wrap: break-word;
+		font-size: clamp(34px, 11vw, 42px);
+		line-height: 1.08;
+	}
+
+	.heroEyebrow {
+		font-size: 11px;
+		letter-spacing: 1.5px;
+	}
+
 	.heroStatsInner {
 		grid-template-columns: repeat(2, 1fr);
 		padding: 22px 24px;
@@ -509,10 +522,18 @@
 	}
 
 	.categoriesMedia {
-		height: min(80vw, 440px);
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		height: auto;
+		max-height: none;
 		min-height: 0;
 		padding: 0 8px 8px 8px;
 		grid-row: 1;
+	}
+
+	.categoriesMedia > div {
+		height: auto;
+		min-height: 0;
 	}
 
 	.sliderImg {
@@ -535,6 +556,11 @@
 
 	.partnersDescription {
 		font-size: 16px;
+	}
+
+	.brandName,
+	.brandMore {
+		font-size: 22px;
 	}
 
 	.brandGroup {
@@ -667,8 +693,15 @@
 	}
 
 	.aboutMedia {
-		height: min(88vw, 500px);
+		height: auto;
+		min-height: 320px;
+		padding: 32px 24px;
 		grid-row: 1;
+	}
+
+	.aboutMedia img {
+		width: 88%;
+		height: auto;
 	}
 
 	.aboutTitle {
@@ -1371,5 +1404,18 @@
 
 	.opportunityHomeLink {
 		min-width: min(294px, 100%);
+	}
+}
+
+/* ── Tablet (861–1100px): relieve fixed minimums, desktop untouched ── */
+@media (max-width: 1100px) and (min-width: 861px) {
+	.aboutContainer {
+		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+		gap: 40px;
+		width: min(100% - 48px, 1500px);
+	}
+
+	.aboutMedia {
+		height: 480px;
 	}
 }

@@ -400,3 +400,8 @@
   .howContainer{grid-template-columns:1fr}
   .howImage{height:420px}
 }
+@media(max-width:560px){
+  .stepsGrid{grid-template-columns:1fr}
+  .modelCard{padding:32px 24px}
+  .howImage{height:300px}
+}

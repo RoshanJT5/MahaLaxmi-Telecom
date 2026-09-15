@@ -99,6 +99,13 @@ export default function SiteShell({ children, transparentOnTop = false }: SiteSh
   }, [transparentOnTop]);
 
   useEffect(() => {
+    document.body.style.overflow = menuOpen ? 'hidden' : '';
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [menuOpen]);
+
+  useEffect(() => {
     if (!openMenu) return;
     const onPointerDown = (event: MouseEvent) => {
       if (navRef.current && !navRef.current.contains(event.target as Node)) {
@@ -137,7 +144,7 @@ export default function SiteShell({ children, transparentOnTop = false }: SiteSh
           </a>
 
           <nav className="main-nav" id="main-nav" aria-label="Main navigation" ref={navRef}>
-            <button className="nav-toggle" id="nav-toggle" aria-label="Toggle navigation" aria-expanded={menuOpen} type="button" onClick={() => setMenuOpen((open) => !open)}>
+            <button className={`nav-toggle${menuOpen ? ' open' : ''}`} id="nav-toggle" aria-label={menuOpen ? 'Close navigation' : 'Toggle navigation'} aria-expanded={menuOpen} type="button" onClick={() => setMenuOpen((open) => !open)}>
               <span className="nav-toggle-bar" />
               <span className="nav-toggle-bar" />
               <span className="nav-toggle-bar" />
@@ -183,6 +190,15 @@ export default function SiteShell({ children, transparentOnTop = false }: SiteSh
                   )}
                 </li>
               ))}
+              <li className="nav-cta-item" key="enquiry">
+                <a
+                  href="/franchise"
+                  className="nav-cta-link"
+                  onClick={() => { setMenuOpen(false); setOpenMenu(null); }}
+                >
+                  Enquiry
+                </a>
+              </li>
             </ul>
           </nav>
 

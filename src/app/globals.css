@@ -1044,6 +1044,7 @@ body {
 
 	.main-nav {
 		flex: 0 0 auto;
+		margin-left: auto;
 	}
 
 	.nav-toggle {
@@ -1064,6 +1065,19 @@ body {
 		height: 1px;
 		display: block;
 		background: #1d1815;
+		transition: transform 0.3s ease, opacity 0.2s ease;
+	}
+
+	.nav-toggle.open .nav-toggle-bar:nth-child(1) {
+		transform: translateY(7px) rotate(45deg);
+	}
+
+	.nav-toggle.open .nav-toggle-bar:nth-child(2) {
+		opacity: 0;
+	}
+
+	.nav-toggle.open .nav-toggle-bar:nth-child(3) {
+		transform: translateY(-7px) rotate(-45deg);
 	}
 
 	.nav-list {
@@ -1076,26 +1090,56 @@ body {
 
 	.nav-list.nav-open {
 		display: flex;
-		position: absolute;
-		top: calc(100% + 12px);
+		position: fixed;
+		top: 80px;
+		left: 0;
 		right: 0;
-		min-width: min(78vw, 320px);
+		bottom: 0;
 		flex-direction: column;
 		align-items: stretch;
 		gap: 0;
-		background: #fffdfa;
-		border: 1px solid #e8e2d6;
-		border-radius: 14px;
-		box-shadow: 0 24px 60px rgba(20, 15, 12, 0.18);
-		padding: 10px;
-		z-index: 70;
+		background: #17120f;
+		border-top: 1px solid #2f2721;
+		padding: 20px 28px 36px;
+		z-index: 45;
+		overflow-y: auto;
+		animation: menuPanelIn 0.35s ease both;
+	}
+
+	@keyframes menuPanelIn {
+		from { opacity: 0; }
+		to { opacity: 1; }
+	}
+
+	.nav-list.nav-open .nav-item {
+		border-bottom: 1px solid rgba(208, 166, 108, 0.14);
+		animation: menuItemIn 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+	}
+
+	.nav-list.nav-open .nav-item:nth-child(2) { animation-delay: 0.06s; }
+	.nav-list.nav-open .nav-item:nth-child(3) { animation-delay: 0.12s; }
+	.nav-list.nav-open .nav-item:nth-child(4) { animation-delay: 0.18s; }
+	.nav-list.nav-open .nav-cta-item { animation: menuItemIn 0.45s cubic-bezier(0.22, 1, 0.36, 1) 0.24s both; }
+
+	@keyframes menuItemIn {
+		from { opacity: 0; transform: translateY(18px); }
+		to { opacity: 1; transform: none; }
 	}
 
 	.nav-list.nav-open .nav-link {
 		display: flex;
 		align-items: center;
-		justify-content: space-between;
-		padding: 12px 14px;
+		justify-content: flex-start;
+		width: 100%;
+		padding: 20px 4px;
+		color: #f5eee7;
+		font-family: Georgia, "Times New Roman", serif;
+		font-size: 32px;
+		font-weight: 400;
+		letter-spacing: -0.5px;
+		line-height: 1.1;
+		text-transform: none;
+		text-align: left;
 	}
 
 	.nav-list.nav-open .nav-link::after {
@@ -1110,27 +1154,111 @@ body {
 		visibility: visible;
 		box-shadow: none;
 		border: none;
-		border-top: 1px solid #f0ece6;
 		border-radius: 0;
-		margin-top: 4px;
-		padding: 4px 0 6px 14px;
+		margin: 0;
+		padding: 0 0 18px 2px;
+		background: transparent;
 	}
 
 	.nav-list.nav-open .menu-open .submenu {
 		display: block;
 	}
 
+	.nav-list.nav-open .submenu-link {
+		padding: 11px 2px;
+		color: #cdbf9f;
+		font-size: 14px;
+		letter-spacing: 0.04em;
+	}
+
+	.nav-list.nav-open .submenu-link:hover,
+	.nav-list.nav-open .submenu-link:focus-visible {
+		background: transparent;
+		color: #e9d9b8;
+	}
+
 	.nav-cta-btn {
-		min-width: 126px;
-		width: auto;
-		height: 38px;
-		padding: 0 12px;
-		justify-content: center;
+		display: none;
 	}
 
 	.nav-cta-icon {
 		width: 15px;
 		height: 15px;
 		flex-basis: 15px;
+	}
+}
+
+/* ── Small phones: keep brand, hamburger and CTA on one row ── */
+@media (max-width: 640px) {
+	.navbar-inner {
+		gap: 10px;
+		width: min(100% - 24px, 1558px);
+	}
+
+	.brand-logo {
+		flex-basis: auto;
+		min-width: 0;
+		overflow: hidden;
+	}
+
+	.brand-logo-mark {
+		width: 34px;
+		height: 34px;
+		flex-shrink: 0;
+	}
+
+	.brand-name {
+		min-width: 0;
+	}
+
+	.brand-name-main {
+		font-size: 15px;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	.brand-name-sub {
+		display: none;
+	}
+
+	.nav-toggle {
+		width: 38px;
+		flex-shrink: 0;
+	}
+
+	.nav-cta-btn {
+		min-width: 104px;
+		padding: 0 10px;
+		font-size: 10px;
+	}
+}
+
+/* ── Enquiry shortcut inside the hamburger panel (mobile only) ── */
+.nav-cta-item {
+	display: none;
+	list-style: none;
+}
+
+@media (max-width: 860px) {
+	.nav-list.nav-open .nav-cta-item {
+		display: block;
+		margin-top: 8px;
+	}
+
+	.nav-list.nav-open .nav-cta-link {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 10px;
+		padding: 15px 18px;
+		border-radius: 8px;
+		background: linear-gradient(90deg, #c48713 0%, #d49d27 25%, #e3bd61 52%, #d49d27 76%, #c48713 100%);
+		color: #17130b;
+		font-size: 12px;
+		font-weight: 700;
+		letter-spacing: 0.15em;
+		text-transform: uppercase;
+		text-decoration: none;
 	}
 }

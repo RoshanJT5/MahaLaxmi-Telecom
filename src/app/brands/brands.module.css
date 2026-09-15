@@ -427,3 +427,9 @@
   .marqueeTrack{gap:48px}
   .marqueeItem{font-size:18px}
 }
+
+/* ── Small phones: neutralize fixed inline widths ── */
+@media(max-width:640px){
+  #brand-partners p[style]{width:auto !important}
+  .heroSection{padding:110px 0 56px}
+}
