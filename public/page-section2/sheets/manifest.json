@@ -1,0 +1,80 @@
+{
+  "desktop": {
+    "cellW": 960,
+    "cellH": 540,
+    "cols": 7,
+    "rows": 7,
+    "total": 255,
+    "sheets": [
+      {
+        "file": "sheets/desk-0.jpg",
+        "start": 0,
+        "count": 43
+      },
+      {
+        "file": "sheets/desk-1.jpg",
+        "start": 43,
+        "count": 43
+      },
+      {
+        "file": "sheets/desk-2.jpg",
+        "start": 86,
+        "count": 43
+      },
+      {
+        "file": "sheets/desk-3.jpg",
+        "start": 129,
+        "count": 43
+      },
+      {
+        "file": "sheets/desk-4.jpg",
+        "start": 172,
+        "count": 43
+      },
+      {
+        "file": "sheets/desk-5.jpg",
+        "start": 215,
+        "count": 40
+      }
+    ]
+  },
+  "mobile": {
+    "cellW": 853,
+    "cellH": 480,
+    "cols": 6,
+    "rows": 4,
+    "total": 128,
+    "sheets": [
+      {
+        "file": "sheets/mob-0.jpg",
+        "start": 0,
+        "count": 22
+      },
+      {
+        "file": "sheets/mob-1.jpg",
+        "start": 22,
+        "count": 22
+      },
+      {
+        "file": "sheets/mob-2.jpg",
+        "start": 44,
+        "count": 22
+      },
+      {
+        "file": "sheets/mob-3.jpg",
+        "start": 66,
+        "count": 21
+      },
+      {
+        "file": "sheets/mob-4.jpg",
+        "start": 87,
+        "count": 21
+      },
+      {
+        "file": "sheets/mob-5.jpg",
+        "start": 108,
+        "count": 20
+      }
+    ]
+  }
+}

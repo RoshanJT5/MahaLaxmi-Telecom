@@ -1,38 +1,32 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 
 interface LoadingScreenProps {
+  /** 0-100 download progress driven by the asset preloader. */
+  progress: number;
   onComplete?: () => void;
 }
 
-export default function LoadingScreen({ onComplete }: LoadingScreenProps) {
-  const [progress, setProgress] = useState(0);
+export default function LoadingScreen({ progress, onComplete }: LoadingScreenProps) {
   const [isFadingOut, setIsFadingOut] = useState(false);
+  const doneRef = useRef(false);
 
   useEffect(() => {
-    const startTime = Date.now();
-    const duration = 2000;
+    if (progress < 100 || doneRef.current) return;
+    doneRef.current = true;
+    const holdId = setTimeout(() => {
+      setIsFadingOut(true);
+      const fadeId = setTimeout(() => {
+        if (typeof onComplete === 'function') onComplete();
+      }, 700);
+      return () => clearTimeout(fadeId);
+    }, 250);
+    return () => clearTimeout(holdId);
+  }, [progress, onComplete]);
 
-    const interval = setInterval(() => {
-      const elapsed = Date.now() - startTime;
-      const pct = Math.min(100, Math.floor((elapsed / duration) * 100));
-      setProgress(pct);
-
-      if (pct >= 100) {
-        clearInterval(interval);
-        setTimeout(() => {
-          setIsFadingOut(true);
-          setTimeout(() => {
-            if (typeof onComplete === 'function') onComplete();
-          }, 700);
-        }, 150);
-      }
-    }, 25);
-
-    return () => clearInterval(interval);
-  }, [onComplete]);
+  const pct = Math.max(0, Math.min(100, Math.floor(progress)));
 
   return (
     <div
@@ -130,7 +124,7 @@ export default function LoadingScreen({ onComplete }: LoadingScreenProps) {
         >
           <div
             style={{
-              width: `${progress}%`,
+              width: `${pct}%`,
               height: '100%',
               borderRadius: '9999px',
               transition: 'width 30ms linear',
@@ -155,7 +149,7 @@ export default function LoadingScreen({ onComplete }: LoadingScreenProps) {
           }}
         >
           <span>LOADING</span>
-          <span style={{ fontWeight: 600 }}>{progress}%</span>
+          <span style={{ fontWeight: 600 }}>{pct}%</span>
         </div>
       </div>
     </div>

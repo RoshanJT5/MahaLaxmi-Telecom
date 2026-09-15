@@ -2,15 +2,13 @@
 
 import { useEffect, useRef, useState } from 'react';
 import styles from './ScrollFlythrough.module.css';
-
-const DESKTOP_COUNT = 255;
-const MOBILE_COUNT = 128;
-const pad = (n: number) => String(n).padStart(3, '0');
-const desktopUrl = (i: number) => `/page-section2/frames/ezgif-frame-${pad(i + 1)}.jpg`;
-const mobileUrl = (i: number) => {
-  const srcIndex = Math.min(254, i * 2);
-  return `/page-section2/frames-mobile/ezgif-frame-${pad(srcIndex + 1)}.jpg`;
-};
+import {
+  sheetStore,
+  detectVariant,
+  drawCoverSlice,
+  type Slice,
+  type Variant,
+} from '@/lib/asset-loader';
 
 const GROW_FRAMES = 5;
 const ZERO_SRC = '/store_img.png';
@@ -47,12 +45,14 @@ export default function ScrollFlythrough({ embedded = false, takeover = false }:
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const isMobile = window.matchMedia('(max-width: 860px), (pointer: coarse)').matches;
-    const count = isMobile ? MOBILE_COUNT : DESKTOP_COUNT;
-    const url = isMobile ? mobileUrl : desktopUrl;
+    const variant: Variant = detectVariant();
+    // Display idx 0 = zeroth frame (store image); idx d>0 = sheet frame d-1.
+    let count = variant === 'desktop' ? 256 : 129;
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    let lastImg: HTMLImageElement | null = null;
+    let lastSlice: Slice | null = null;
+    let showingZero = true;
+    let zeroImg: HTMLImageElement | null = sheetStore.zeroImg;
     const drawCover = (img: HTMLImageElement) => {
       const cw = canvas.width;
       const ch = canvas.height;
@@ -61,7 +61,15 @@ export default function ScrollFlythrough({ embedded = false, takeover = false }:
       const dw = img.naturalWidth * s;
       const dh = img.naturalHeight * s;
       ctx.drawImage(img, (cw - dw) / 2, (ch - dh) / 2, dw, dh);
-      lastImg = img;
+      showingZero = true;
+      lastSlice = null;
+    };
+    const redraw = () => {
+      if (showingZero) {
+        if (zeroImg?.naturalWidth) drawCover(zeroImg);
+      } else if (lastSlice) {
+        drawCoverSlice(ctx, canvas, lastSlice);
+      }
     };
     const sizeCanvas = () => {
       // Canvas fills the morph stage; clientWidth is unaffected by layout,
@@ -74,25 +82,15 @@ export default function ScrollFlythrough({ embedded = false, takeover = false }:
       if (canvas.width !== W || canvas.height !== H) {
         canvas.width = W;
         canvas.height = H;
-        if (lastImg?.naturalWidth) drawCover(lastImg);
+        redraw();
       }
     };
     sizeCanvas();
     window.addEventListener('resize', sizeCanvas);
 
-    const imgs: (HTMLImageElement | undefined)[] = new Array(count);
-    let done = 0;
-
     let target = 0;
     let current = -1;
     let raf = 0;
-    // Zeroth frame = the image div content (page.tsx #about-zero-frame).
-    // Display idx 0 draws ZERO_SRC, display idx d>0 draws flythrough frame d.
-    const zeroImg = new Image();
-    zeroImg.src = ZERO_SRC;
-    // Display idx d>0 draws flythrough frame d (frame-001 is skipped — the
-    // zeroth frame already covers the exterior establishing shot).
-    const flyUrl = (j: number) => url(Math.max(0, Math.min(count - 1, j + 1)));
     type StartRect = { l: number; t: number; w: number; h: number; r: number };
     let start: StartRect | null = null;
     let placed = false;
@@ -106,8 +104,6 @@ export default function ScrollFlythrough({ embedded = false, takeover = false }:
       const src = getSource();
       if (src) {
         const b = src.getBoundingClientRect();
-        // Only trust the measured box while the source is actually on screen
-        // (e.g. not after a mid-page reload); otherwise use the fallback.
         if (b.width > 2 && b.height > 2 && b.top > -window.innerHeight && b.top < window.innerHeight) {
           let r = 3;
           try { r = parseFloat(getComputedStyle(src).borderRadius) || 3; } catch { /* noop */ }
@@ -115,18 +111,14 @@ export default function ScrollFlythrough({ embedded = false, takeover = false }:
           return start;
         }
       }
-      // Fallback: centered card if the source image div is missing/off-screen.
       start = fallback();
       return start;
     };
-    // Pull the tall driver up so the sticky pins at the exact moment the
-    // source image card sits 12vh from the viewport top — then the canvas
-    // stage can take over at identical coordinates.
     const placeWrap = () => {
       if (placed || !takeover) return;
       const src = getSource();
       if (!src) return;
-      if (wrap.getBoundingClientRect().top < window.innerHeight) return; // approaching: freeze layout
+      if (wrap.getBoundingClientRect().top < window.innerHeight) return;
       const gap = wrap.getBoundingClientRect().top - src.getBoundingClientRect().top;
       const cur = parseFloat(getComputedStyle(wrap).marginTop) || 0;
       const m = Math.max(0, gap - cur + window.innerHeight * 0.12);
@@ -146,10 +138,6 @@ export default function ScrollFlythrough({ embedded = false, takeover = false }:
       if (rect.bottom >= window.innerHeight) return 'pinned';
       return 'after';
     };
-    // Morph the stage from the source image rect (frame 0) to fullscreen
-    // (frame GROW_FRAMES). Same pixels, same box — then it grows.
-    // 'after' holds the last frame fullscreen while the sticky scrolls out,
-    // so no blank gap flashes between the animation and the next section.
     const layoutStage = (frameFloat: number, phase: Phase) => {
       const stage = stageRef.current;
       const sticky = stickyRef.current;
@@ -202,6 +190,39 @@ export default function ScrollFlythrough({ embedded = false, takeover = false }:
       sizeCanvas();
     };
     let phaseCache: Phase = 'before';
+    const drawFrame = (idx: number) => {
+      if (idx === 0) {
+        if (zeroImg?.complete && zeroImg.naturalWidth) {
+          showingZero = true;
+          lastSlice = null;
+          drawCover(zeroImg);
+        }
+        return;
+      }
+      const slice = sheetStore.getSlice(idx - 1);
+      if (slice) {
+        showingZero = false;
+        lastSlice = slice;
+        drawCoverSlice(ctx, canvas, slice);
+        return;
+      }
+      // Sheet still decoding — paint it the moment it arrives, if still current.
+      const wanted = idx;
+      const sheetIndex = sheetStore.sheetIndexOf(idx - 1);
+      if (sheetIndex === null) return;
+      sheetStore
+        .ensureSheet(sheetIndex)
+        ?.then(() => {
+          if (Math.round(frameFloatFromP(current, count)) !== wanted) return;
+          const s2 = sheetStore.getSlice(wanted - 1);
+          if (s2) {
+            showingZero = false;
+            lastSlice = s2;
+            drawCoverSlice(ctx, canvas, s2);
+          }
+        })
+        .catch(() => {});
+    };
     const render = () => {
       raf = requestAnimationFrame(render);
       if (Math.abs(target - current) < 0.0005) return;
@@ -209,32 +230,10 @@ export default function ScrollFlythrough({ embedded = false, takeover = false }:
       const frameFloat = frameFloatFromP(current, count);
       const idx = Math.max(0, Math.min(count - 1, Math.round(frameFloat)));
       layoutStage(frameFloat, phaseCache);
-      const img = idx === 0 ? zeroImg : imgs[idx - 1];
-      if (img && img.complete && img.naturalWidth) {
-        drawCover(img);
-        const beat = Math.min(BEATS.length - 1, Math.floor((idx / (count - 1)) * BEATS.length));
-        setActive((p) => (p === beat ? p : beat));
-      } else if (idx > 0 && !imgs[idx - 1]) {
-        const im = new Image();
-        im.src = flyUrl(idx - 1);
-        imgs[idx - 1] = im;
-        im.onload = () => drawCover(im);
-      }
+      drawFrame(idx);
+      const beat = Math.min(BEATS.length - 1, Math.floor((idx / (count - 1)) * BEATS.length));
+      setActive((p) => (p === beat ? p : beat));
     };
-
-    const loadOne = (j: number): Promise<void> =>
-      new Promise((res) => {
-        if (j < 0 || j >= count - 1 || imgs[j]) return res();
-        const im = new Image();
-        imgs[j] = im;
-        im.onload = () => {
-          done += 1;
-          setLoaded(Math.round((done / count) * 100));
-          res();
-        };
-        im.onerror = () => res();
-        im.src = flyUrl(j);
-      });
 
     const onScroll = () => {
       placeWrap();
@@ -249,30 +248,40 @@ export default function ScrollFlythrough({ embedded = false, takeover = false }:
     };
 
     (async () => {
-      await new Promise<void>((res) => {
-        if (zeroImg.complete && zeroImg.naturalWidth) return res();
-        zeroImg.onload = () => res();
-        zeroImg.onerror = () => res();
-      });
-      for (let j = 0; j < Math.min(12, count - 1); j++) await loadOne(j);
-      drawCover(zeroImg);
+      setLoaded(5);
+      try {
+        // Shares the home-page preload (no double download); runs it standalone otherwise.
+        await sheetStore.ensure(variant);
+      } catch {
+        /* sheets decode lazily at runtime */
+      }
+      count = sheetStore.flyTotal > 0 ? sheetStore.flyTotal + 1 : count;
+      if (!zeroImg || !zeroImg.naturalWidth) {
+        const fromStore = sheetStore.zeroImg;
+        if (fromStore?.naturalWidth) {
+          zeroImg = fromStore;
+        } else {
+          await new Promise<void>((res) => {
+            if (!zeroImg) return res();
+            if (zeroImg.complete && zeroImg.naturalWidth) return res();
+            zeroImg.onload = () => res();
+            zeroImg.onerror = () => res();
+          });
+        }
+      }
+      if (zeroImg?.naturalWidth) {
+        showingZero = true;
+        drawCover(zeroImg);
+      }
+      setLoaded(100);
       setReady(true);
       placeWrap();
       onScroll();
       current = target;
       const ff0 = frameFloatFromP(current, count);
-      const idx0 = Math.round(ff0);
-      const img0 = idx0 === 0 ? zeroImg : imgs[idx0 - 1];
-      if (img0?.naturalWidth) drawCover(img0 as HTMLImageElement);
+      drawFrame(Math.round(ff0));
       layoutStage(ff0, phaseCache);
       render();
-      if (!reduced) {
-        for (let j = 12; j < count - 1; j += 4) {
-          await Promise.all([loadOne(j), loadOne(j + 1), loadOne(j + 2), loadOne(j + 3)]);
-          const r = wrap.getBoundingClientRect();
-          if (r.bottom < -2500 || r.top > window.innerHeight + 2500) break;
-        }
-      }
     })();
 
     window.addEventListener('scroll', onScroll, { passive: true });

@@ -6,6 +6,8 @@ import SiteShell from '@/components/SiteShell';
 import { InfiniteSlider } from '@/components/InfiniteSlider';
 import ScrollFlythrough from '@/components/ScrollFlythrough';
 import { Typewriter } from '@/components/ui/typewriter-text';
+import LoadingScreen from '@/components/ui/LoadingScreen';
+import { sheetStore, detectVariant, preloadLogo } from '@/lib/asset-loader';
 import styles from './page.module.css';
 
 const heroImages = [
@@ -19,7 +21,40 @@ const heroImages = [
 const unsplash = (id: string) => `https://images.unsplash.com/photo-${id}?w=600&q=70&auto=format&fit=crop`;
 
 export default function Home() {
-  return <SiteShell transparentOnTop>
+  // Production gate: the landing page reveals only after the logo, the 6
+  // frame spritesheets and the hero imagery are fully downloaded + cached.
+  const [booted, setBooted] = useState(false);
+  const [loadProgress, setLoadProgress] = useState(0);
+  const [revealed, setRevealed] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      await preloadLogo();
+      if (cancelled) return;
+      setBooted(true);
+      try {
+        await sheetStore.ensure(detectVariant(), (f) => {
+          if (!cancelled) setLoadProgress(Math.round(f * 100));
+        });
+      } catch {
+        /* offline/failed assets — reveal anyway with lazy decoding */
+      }
+      if (cancelled) return;
+      setLoadProgress(100);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return (
+    <>
+      {!booted && <div aria-hidden="true" style={{ position: 'fixed', inset: 0, zIndex: 9999, background: '#000' }} />}
+      {booted && !revealed && (
+        <LoadingScreen progress={loadProgress} onComplete={() => setRevealed(true)} />
+      )}
+      <SiteShell transparentOnTop>
     <main id="main-content">
       <section id="hero" className={styles.heroSection}>
         <HeroBackground />
@@ -151,7 +186,9 @@ export default function Home() {
     <StoreOutletBrandsSection />
     <WhyPartnerSection />
     <VisionAndOpportunitySection />
-  </SiteShell>;
+    </SiteShell>
+    </>
+  );
 }
 
 const partnerBrands = [
