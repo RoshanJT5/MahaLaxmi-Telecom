@@ -24,3 +24,7 @@ yarn-error.log*
 # OS files
 .DS_Store
 Thumbs.db
+
+# video files
+JM Scrolling video.mp4
+*.mp4

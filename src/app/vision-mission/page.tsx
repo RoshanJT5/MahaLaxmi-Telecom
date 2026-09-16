@@ -1,61 +1,20 @@
+import type { Metadata } from 'next';
 import SiteShell from '@/components/SiteShell';
-import styles from './vision-mission.module.css';
+import { CallToAction, PageHero, SectionHeading } from '@/components/Editorial';
 
-const PILLARS = [
-  { title: 'Seamless Connectivity', desc: 'Reliable access to the digital world for every customer.' },
-  { title: 'Expert Guidance', desc: 'Honest, knowledgeable advice at every store visit.' },
-  { title: 'Affordable For All', desc: 'Long-term value and support at fair, transparent prices.' },
+export const metadata: Metadata = { title: 'Vision & mission | Mahalaxmi Telecom', description: 'Our vision for trusted, accessible mobile and accessory retail.' };
+
+const pillars = [
+  { title: 'Seamless connectivity', body: 'Reliable access to the digital world for every customer.' },
+  { title: 'Expert guidance', body: 'Honest, knowledgeable advice at every store visit.' },
+  { title: 'Accessible value', body: 'Smart technology, service and support at fair prices.' },
 ];
 
 export default function VisionMissionPage() {
-  return (
-    <SiteShell transparentOnTop>
-      <main id="main-content">
-        <section className={styles.heroSection} aria-label="Our vision">
-          <div className={styles.heroBg} aria-hidden="true" />
-          <div className={styles.heroContainer}>
-            <p className={styles.heroEyebrow}>Vision</p>
-            <h1 className={styles.heroTitle}>
-              To become the most trusted multi-brand mobile and accessory retail chain in <em>India.</em>
-            </h1>
-            <p className={styles.heroTag}>One Team, One Network</p>
-            <p className={styles.heroSupport}>
-              Offering innovative products, seamless shopping experiences and lasting customer
-              relationships, across every store we open and every partner we work with.
-            </p>
-          </div>
-        </section>
-
-        <section className={styles.missionSection} aria-label="Our mission">
-          <div className={styles.missionContainer}>
-            <div className={styles.missionIntro}>
-              <div className={styles.missionSticky}>
-                <p className={styles.eyebrow}>Why We Exist</p>
-                <h2 className={styles.missionTitle}>Our Mission</h2>
-              </div>
-            </div>
-            <div className={styles.missionBody}>
-              <p className={styles.missionLead}>
-                To empower every individual and community by making seamless connectivity, smart
-                technology and expert guidance accessible to all, bridging the gap between people
-                and the digital world.
-              </p>
-              <p className={styles.missionSupport}>
-                Committed to delivering excellent service, honest guidance and long-term support,
-                all at affordable prices.
-              </p>
-              <div className={styles.pillars}>
-                {PILLARS.map((pillar) => (
-                  <div className={styles.pillar} key={pillar.title}>
-                    <h3 className={styles.pillarTitle}>{pillar.title}</h3>
-                    <p className={styles.pillarDesc}>{pillar.desc}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
-      </main>
-    </SiteShell>
-  );
+  return <SiteShell><main id="main-content">
+    <PageHero dark image="/jm-showroom-hero.png" title={<>One team.<br /><em>One network.</em></>} intro="Our vision is to become the most trusted multi-brand mobile and accessory retail chain in India." />
+    <section className="section-pad"><div className="wrap editorial-two-col"><SectionHeading title={<>The vision<br /><em>guiding us.</em></>} /><div className="editorial-two-col__body"><p className="large-copy">To make innovative products and seamless shopping experiences available through stores people know and trust.</p><p>We are building lasting customer relationships across every store we open and every partner we work with.</p></div></div></section>
+    <section className="section-pad surface-warm"><div className="wrap editorial-two-col"><SectionHeading title={<>The mission<br /><em>behind it.</em></>} /><div className="editorial-two-col__body"><p className="large-copy">To empower individuals and communities by making connectivity, smart technology and expert guidance accessible to all.</p><p>Our promise is excellent service, honest advice and long-term support at affordable prices.</p><div className="pillar-list">{pillars.map((pillar) => <div key={pillar.title}><h3>{pillar.title}</h3><p>{pillar.body}</p></div>)}</div></div></div></section>
+    <CallToAction title={<>Build the future<br /><em>with us.</em></>} body="See how our retail model brings our vision to more communities." primary="Our business model" primaryHref="/business-model" />
+  </main></SiteShell>;
 }
