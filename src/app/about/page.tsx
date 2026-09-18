@@ -5,7 +5,36 @@ import {
   motion,
 } from 'framer-motion';
 import SiteShell from '@/components/SiteShell';
+import VisionMissionSections from '@/components/VisionMissionSections';
 import styles from './about.module.css';
+
+const timeline = [
+  {
+    eyebrow: 'Past',
+    title: 'Two Decades of Trust',
+    body: 'For more than twenty years, we have been a trusted name in the telecom industry, working as a distribution partner to several recognized mobile brands. Along the way, we built strong, lasting relationships with thousands of retail partners across the market.',
+  },
+  {
+    eyebrow: 'Experience',
+    title: 'Relationships That Lasted',
+    body: 'Staying connected to that retail network taught us exactly what helps a retail business grow and hold its ground, season after season.',
+  },
+  {
+    eyebrow: 'Insight',
+    title: 'Understanding Our Retailers',
+    body: 'Two decades on the distribution side gave us a close view of what retailers actually deal with day to day, their needs, their ambitions and their everyday challenges.',
+  },
+  {
+    eyebrow: 'Solution',
+    title: 'Building The Next Chapter',
+    body: 'That experience lets us offer more than products. We bring real business opportunity, dependable support and long-term value to every retail partner, because our growth and theirs are tied together. It is why we launched our Retail Store Chain Franchise Model, so you can build your future with our franchise.',
+  },
+  {
+    eyebrow: 'Future',
+    title: 'Our Aim',
+    body: 'To establish a network of 200+ premium retail stores across Maharashtra, building a unified ecosystem that gives every franchise partner a trusted brand, a proven business model and a real path to long-term growth.',
+  },
+];
 
 /* ── Count-up hook ─────────────────────────────────────────────────────────── */
 function useCountUp(target: number, duration = 1800) {
@@ -161,8 +190,40 @@ export default function AboutPage() {
 
           </div>
         </section>
+        <VisionMissionSections />
+        {/* ── 5. Our Story ───────────────────────────────────────────── */}
+        <section className={styles.journeySection} id="our-story" aria-labelledby="journey-title">
+          <div className={styles.journeyContainer}>
+            <div className={styles.journeyIntro}>
+              <p className={styles.journeyEyebrow}>Our Story</p>
+              <h2 className={styles.journeyHeading} id="journey-title">
+                Twenty years of trust, written <span>one relationship</span> at a time.
+              </h2>
+              <p className={styles.journeyLead}>
+                Our journey moves from distribution partner to retail chain, and from insight to a
+                franchise model built for the people who sell every day.
+              </p>
+            </div>
+            <div className={styles.journeyLayout}>
+              <div className={styles.journeyMedia}>
+                <img src="/page-section1/store-hero.jpg" alt="Inside a Mahalaxmi Telecom retail store" loading="lazy" />
+              </div>
+              <div className={styles.journeyTimeline}>
+                {timeline.map((item) => (
+                  <article className={styles.journeyItem} key={item.title}>
+                    <p className={styles.journeyStep}>{item.eyebrow}</p>
+                    <h3 className={styles.journeyTitle}>{item.title}</h3>
+                    <p className={styles.journeyBody}>{item.body}</p>
+                  </article>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
 
-        {/* ── 4. Values / CTA ───────────────────────────────────────────── */}
+
+        {/* ── 5. Values / CTA ───────────────────────────────────────────── */}
+
         <section className={styles.valuesSection}>
           <div className={styles.valuesContainer}>
             <div className={styles.valuesCopy}>
@@ -195,7 +256,6 @@ export default function AboutPage() {
             />
           </div>
         </section>
-
       </main>
     </SiteShell>
   );

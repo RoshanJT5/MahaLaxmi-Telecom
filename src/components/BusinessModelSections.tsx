@@ -1,25 +1,7 @@
-import SiteShell from '@/components/SiteShell';
-import styles from './business-model.module.css';
+import styles from './BusinessModelSections.module.css';
 
 const FORMATS = ['Jagyasi Mobile', 'MM Mobile', 'Phone Cafe', 'Mobile Point'];
 const RETAIL_BRANDS = ['Apple', 'Samsung', 'vivo', 'OPPO', 'Xiaomi'];
-
-const OPERATE = [
-  {
-    tag: 'COCO',
-    title: 'Company Owned & Company Operated',
-    quote: 'Stores owned, managed and operated directly by Mahalaxmi Telecom.',
-    points: ['Full operational control', 'Consistent customer experience', 'Direct management oversight'],
-    dark: true,
-  },
-  {
-    tag: 'FOFO',
-    title: 'Franchise Owned & Franchise Operated',
-    quote: 'Entrepreneur-led stores operated under the Mahalaxmi Telecom ecosystem.',
-    points: ['Local ownership & investment', 'Faster market expansion', 'Entrepreneur-led growth'],
-    dark: false,
-  },
-];
 
 const ECOSYSTEM = [
   {
@@ -51,16 +33,15 @@ const CUSTOMER_STEPS = [
   { title: 'Trust', desc: 'Two decades of relationships behind every shelf.' },
 ];
 
-export default function BusinessModelPage() {
+export default function BusinessModelSections() {
   return (
-    <SiteShell>
-      <main id="main-content">
-        <section className={styles.heroSection}>
+    <div id="business-model">
+        <section className={styles.heroSection} aria-labelledby="business-model-title">
           <div className={styles.container}>
             <p className={styles.eyebrow}>Our Business Model</p>
-            <h1 className={styles.heroTitle}>
+            <h2 className={styles.heroTitle} id="business-model-title">
               A multi-brand, <span>multi-chain</span> retail company.
-            </h1>
+            </h2>
             <p className={styles.heroDesc}>
               Mahalaxmi Telecom Pvt. Ltd. is a multi-brand consumer electronics retail company
               operating through a growing network of company-owned and franchise-operated stores.
@@ -116,39 +97,9 @@ export default function BusinessModelPage() {
           </div>
         </section>
 
-        <section className={`${styles.block} ${styles.blockTint}`} aria-label="How we operate">
-          <div className={styles.container}>
-            <p className={styles.secLabel}>02 — How we operate</p>
-            <h2 className={styles.secTitle}>Two pathways. One retail standard.</h2>
-            <div className={styles.operateGrid}>
-              {OPERATE.map((card) => (
-                <article
-                  className={`${styles.operateCard} ${card.dark ? styles.operateDark : ''}`}
-                  key={card.tag}
-                >
-                  <p className={styles.operateTag}>{card.tag}</p>
-                  <h3 className={styles.operateTitle}>{card.title}</h3>
-                  <p className={styles.operateQuote}>{card.quote}</p>
-                  <ul className={styles.ticks}>
-                    {card.points.map((point) => (
-                      <li key={point}>{point}</li>
-                    ))}
-                  </ul>
-                </article>
-              ))}
-            </div>
-            <div className={styles.standardBand}>
-              <p className={styles.standardEyebrow}>One Brand Standard</p>
-              <p className={styles.standardLine}>
-                Ownership may differ. <em>The customer experience does not.</em>
-              </p>
-            </div>
-          </div>
-        </section>
-
         <section className={styles.block} aria-label="What we offer">
           <div className={styles.container}>
-            <p className={styles.secLabel}>03 — What we offer</p>
+            <p className={styles.secLabel}>02 — What we offer</p>
             <h2 className={styles.secTitle}>Our retail ecosystem.</h2>
             <div className={styles.ecoGrid}>
               {ECOSYSTEM.map((card) => (
@@ -169,7 +120,7 @@ export default function BusinessModelPage() {
 
         <section className={`${styles.block} ${styles.blockDark}`} aria-label="How we scale">
           <div className={styles.container}>
-            <p className={styles.secLabel}>04 — How we scale</p>
+            <p className={styles.secLabel}>03 — How we scale</p>
             <h2 className={styles.secTitleLight}>Central expertise, local entrepreneurship.</h2>
             <div className={styles.scaleGrid}>
               <article className={styles.scaleCard}>
@@ -195,7 +146,7 @@ export default function BusinessModelPage() {
 
         <section className={styles.block} aria-label="Built around the customer">
           <div className={styles.container}>
-            <p className={styles.secLabel}>05 — What connects it all</p>
+            <p className={styles.secLabel}>04 — What connects it all</p>
             <h2 className={styles.secTitle}>Built around the customer.</h2>
             <p className={styles.customerCopy}>
               From choosing the right device to financing, accessories and after-sales support, our
@@ -215,21 +166,6 @@ export default function BusinessModelPage() {
           </div>
         </section>
 
-        <section className={styles.ctaSection} aria-label="Franchise call to action">
-          <div className={styles.ctaBox}>
-            <p className={styles.secLabel}>06 — Your move</p>
-            <h2 className={styles.ctaTitle}>Build your future with our franchise.</h2>
-            <div className={styles.ctaActions}>
-              <a href="/franchise" className={`${styles.btn} ${styles.btnPrimary}`}>
-                Explore Franchise <span aria-hidden="true">→</span>
-              </a>
-              <a href="/brands" className={`${styles.btn} ${styles.btnGhost}`}>
-                Our Brands <span aria-hidden="true">→</span>
-              </a>
-            </div>
-          </div>
-        </section>
-      </main>
-    </SiteShell>
+    </div>
   );
 }

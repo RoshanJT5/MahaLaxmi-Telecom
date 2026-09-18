@@ -218,28 +218,28 @@ const outletBrands = [
     initials: 'JM',
     name: 'Jagyasi Mobile',
     description: 'Our flagship, company-operated format focused on full-range mobile retail and premium in-store experience.',
-    image: 'https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?w=800&q=80&auto=format&fit=crop',
+    image: '/4-stores/Jagyasi%20mobiles.png',
   },
   {
     id: 'mm',
     initials: 'MM',
     name: 'MM Mobile',
     description: 'A standard-format store built for consistent, everyday mobile and accessory retail.',
-    image: 'https://images.unsplash.com/photo-1567401893414-76b7b1e5a7a5?w=800&q=80&auto=format&fit=crop',
+    image: '/4-stores/MM%20mobiles.jpeg',
   },
   {
     id: 'pc',
     initials: 'PC',
     name: 'Phone Cafe',
     description: 'A compact, neighbourhood-friendly format for accessible mobile shopping.',
-    image: 'https://images.unsplash.com/photo-1556740738-b6a63e27c4df?w=800&q=80&auto=format&fit=crop',
+    image: '/4-stores/PhoneCafe.png',
   },
   {
     id: 'mp',
     initials: 'MP',
     name: 'Mobile Point',
     description: 'A focused retail point for devices and accessories in emerging markets.',
-    image: 'https://images.unsplash.com/photo-1607083206869-4c7672e72a8a?w=800&q=80&auto=format&fit=crop',
+    image: '/4-stores/Mobile%20Point.jpeg',
   },
 ];
 
@@ -363,6 +363,7 @@ function StoreOutletBrandsSection() {
                     transition={{ type: 'spring', stiffness: 260, damping: 25, mass: 0.8 }}
                     className={styles.outletCard}
                   >
+                    <img src={brand.image} alt="" aria-hidden="true" className={styles.outletCardBackdrop} />
                     <img
                       src={brand.image}
                       alt={brand.name}
@@ -460,7 +461,7 @@ function VisionAndOpportunitySection() {
           <p className={styles.visionHomeEyebrow}>Vision</p>
           <h2 className={styles.visionHomeTitle}>To become the most trusted multi-brand mobile and accessory retail chain in <em>India.</em></h2>
           <p className={styles.visionHomeDescription}>Offering innovative products, seamless shopping experiences and lasting customer relationships, across every store we open and every partner we work with.</p>
-          <a href="/vision-mission" className={styles.visionHomeLink}>Vision &amp; Mission <span aria-hidden="true">-&gt;</span></a>
+          <a href="/about#vision-mission" className={styles.visionHomeLink}>Vision &amp; Mission <span aria-hidden="true">-&gt;</span></a>
         </div>
       </section>
     </>

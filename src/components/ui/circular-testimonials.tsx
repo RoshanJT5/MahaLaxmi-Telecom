@@ -9,25 +9,17 @@ type NewT = {
   role: string;
   message: string;
   image: string;
-  backgroundImage: string;
 };
 
 function normalize(input: any[]): NewT[] {
   if (!input || !input.length) return [];
   if (input[0]?.quote) {
     const legacy = input as Legacy[];
-    const bgs = [
-      "/page-section1/store-detail.jpg",
-      "/page-section1/hero-store.jpg",
-      "/store_img.png",
-      "/jm-showroom-hero.png",
-    ];
-    return legacy.map((t, i) => ({
+    return legacy.map((t) => ({
       name: t.name,
       role: t.designation,
       message: t.quote,
       image: t.src,
-      backgroundImage: bgs[(i + 1) % bgs.length],
     }));
   }
   return input as NewT[];
@@ -47,12 +39,10 @@ export function CircularTestimonials({
     ? normalized
     : [
         {
-          name: "Martina Edelweist",
-          role: "Satisfied Customer",
-          message:
-            "Shining Yam is a hidden gem! The impeccable service and overall attention to detail created a memorable experience. I highly recommend it!",
+          name: "Jagyasi Mobile",
+          role: "Flagship Format — JM",
+          message: "Our flagship, company-operated format focused on full-range mobile retail and premium in-store experience.",
           image: "/jm-showroom-hero.png",
-          backgroundImage: "/page-section1/store-detail.jpg",
         },
         {
           name: "MM Mobile",
@@ -60,7 +50,6 @@ export function CircularTestimonials({
           message:
             "A standard-format store built for consistent, everyday mobile and accessory retail.",
           image: "/page-section1/store-detail.jpg",
-          backgroundImage: "/page-section1/hero-store.jpg",
         },
         {
           name: "Phone Café",
@@ -68,7 +57,6 @@ export function CircularTestimonials({
           message:
             "A compact, neighbourhood-friendly format for accessible mobile shopping.",
           image: "/page-section1/hero-store.jpg",
-          backgroundImage: "/store_img.png",
         },
         {
           name: "Mobile Point",
@@ -76,7 +64,6 @@ export function CircularTestimonials({
           message:
             "A focused retail point for devices and accessories in emerging markets.",
           image: "/store_img.png",
-          backgroundImage: "/jm-showroom-hero.png",
         },
       ];
   const n = data.length;
@@ -236,15 +223,11 @@ export function CircularTestimonials({
                   background: "#151a1d",
                 }}
 >
+                <img src={t.image} alt="" aria-hidden="true" className="testimonial-image-backdrop" />
                 <img
                   src={t.image}
                   alt={t.name}
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                    objectFit: "cover",
-                    display: "block",
-                  }}
+                  className="testimonial-image-photo"
                 />
               </motion.div>
             );

@@ -25,6 +25,24 @@
   height: 560px;
 }
 
+.testimonial-image-backdrop {
+  position: absolute;
+  inset: -12px;
+  width: calc(100% + 24px);
+  height: calc(100% + 24px);
+  object-fit: cover;
+  filter: blur(12px) brightness(0.55);
+  pointer-events: none;
+}
+
+.testimonial-image-photo {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+}
+
 .testimonial-back-image {
   position: absolute;
   width: 560px;
@@ -38,12 +56,6 @@
   z-index: 1;
 }
 
-.testimonial-back-image img {
-  width: 100%;
-  height: 100%;
-  display: block;
-  object-fit: cover;
-}
 
 .testimonial-main-image {
   position: absolute;
@@ -57,12 +69,6 @@
   z-index: 2;
 }
 
-.testimonial-main-image img {
-  width: 100%;
-  height: 100%;
-  display: block;
-  object-fit: cover;
-}
 
 .testimonial-content {
   min-width: 0;

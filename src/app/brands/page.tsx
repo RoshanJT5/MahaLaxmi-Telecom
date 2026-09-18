@@ -2,76 +2,39 @@
 import SiteShell from '@/components/SiteShell';
 import styles from './brands.module.css';
 import { CircularTestimonials } from '@/components/ui/circular-testimonials';
-import { ContainerAnimated, ContainerScroll, ContainerStagger, ContainerSticky, GalleryCol, GalleryContainer } from '@/components/blocks/animated-gallery';
-import { useRef } from 'react';
-import { motion, useScroll, useTransform, useSpring } from 'framer-motion';
+import { CoverflowCarousel, type CoverflowSlide } from '@/components/ui/CoverflowCarousel';
+import Image from 'next/image';
+import { useState } from 'react';
 
 const STORE_TESTIMONIALS = [
-  { name: 'Jagyasi Mobile', role: 'Flagship Format — JM', message: 'Our flagship, company-operated format focused on full-range mobile retail and premium in-store experience.', image: '/jm-showroom-hero.png', backgroundImage: '/page-section1/store-detail.jpg' },
-  { name: 'MM Mobile', role: 'Standard Format — MM', message: 'A standard-format store built for consistent, everyday mobile and accessory retail.', image: '/page-section1/store-detail.jpg', backgroundImage: '/page-section1/hero-store.jpg' },
-  { name: 'Phone Café', role: 'Compact Format — PC', message: 'A compact, neighbourhood-friendly format for accessible mobile shopping.', image: '/page-section1/hero-store.jpg', backgroundImage: '/store_img.png' },
-  { name: 'Mobile Point', role: 'Emerging-Market Format — MP', message: 'A focused retail point for devices and accessories in emerging markets.', image: '/store_img.png', backgroundImage: '/jm-showroom-hero.png' },
+  { name: 'Jagyasi Mobile', role: 'Flagship Format — JM', message: 'Our flagship, company-operated format focused on full-range mobile retail and premium in-store experience.', image: '/4-stores/Jagyasi%20mobiles.png' },
+  { name: 'MM Mobile', role: 'Standard Format — MM', message: 'A standard-format store built for consistent, everyday mobile and accessory retail.', image: '/4-stores/MM%20mobiles.jpeg' },
+  { name: 'Phone Café', role: 'Compact Format — PC', message: 'A compact, neighbourhood-friendly format for accessible mobile shopping.', image: '/4-stores/PhoneCafe.png' },
+  { name: 'Mobile Point', role: 'Emerging-Market Format — MP', message: 'A focused retail point for devices and accessories in emerging markets.', image: '/4-stores/Mobile%20Point.jpeg' },
 ];
 
-const BRAND_CARDS_1 = ["/brands/Brands-Card/apple-card.svg", "/brands/Brands-Card/samsung-card.svg", "/brands/Brands-Card/xiaomi-card.svg"];
-const BRAND_CARDS_2 = ["/brands/Brands-Card/oppo-card.svg", "/brands/Brands-Card/motorola-card.svg", "/brands/Brands-Card/vivo-card.svg"];
-const BRAND_CARDS_3 = ["/brands/Brands-Card/noise-card.svg", "/brands/Brands-Card/realme-card.svg", "/brands/Brands-Card/nothing-card.svg"];
-
-const CATEGORIES_GALLERY = [
-  { id: 'smartphones', name: 'Smartphones', desc: 'The latest devices from every major mobile brand, ready to test in-store.', image: '/About-section/Smartphones.png', bg: '#faf9f6' },
-  { id: 'tablets', name: 'Tablets', desc: 'A curated range for work, study and entertainment.', image: '/About-section/Tablet.png', bg: '#f5f1eb' },
-  { id: 'wearables', name: 'Wearables', desc: 'Smartwatches and fitness bands from trusted names.', image: '/About-section/Watches.png', bg: '#faf9f6' },
-  { id: 'accessories', name: 'Accessories', desc: 'Cases, chargers, audio and everyday mobile essentials.', image: '/About-section/Accessories.png', bg: '#f5f1eb' },
-  { id: 'electronics', name: 'Electronics', desc: 'Additional gadgets and lifestyle electronics by store format.', image: '/About-section/Electornics.png', bg: '#faf9f6' },
+const PARTNER_BRANDS: CoverflowSlide[] = [
+  { name: 'Apple', logo: '/brands/Brands-Card/apple.svg', color: '#111111', kind: 'svg', symbol: true },
+  { name: 'Samsung', logo: '/brands/Brands-Card/samsung.svg', color: '#1428a0', kind: 'svg' },
+  { name: 'Xiaomi', logo: '/brands/Brands-Card/xiaomi.svg', color: '#ff6900', kind: 'svg', symbol: true },
+  { name: 'OPPO', logo: '/brands/Brands-Card/oppo.svg', color: '#006b3f', kind: 'svg' },
+  { name: 'Motorola', logo: '/brands/Brands-Card/motorola.svg', color: '#111111', kind: 'svg', symbol: true },
+  { name: 'vivo', logo: '/brands/Brands-Card/vivo.svg', color: '#415fff', kind: 'svg' },
+  { name: 'Noise', logo: '/new-cards/Noise.jpg.webp', kind: 'image', treatment: 'invert-blend' },
+  { name: 'realme', logo: '/new-cards/Realme-1.jpg.webp', kind: 'image', treatment: 'banner' },
+  { name: 'Nothing', logo: '/new-cards/Nothing-1.jpg.webp', kind: 'image', treatment: 'blend' },
 ];
-
-function CircularGallery() {
-  const sectionRef = useRef<HTMLDivElement>(null);
-  const count = CATEGORIES_GALLERY.length;
-  const RADIUS = 420;
-  const { scrollYProgress } = useScroll({ target: sectionRef, offset: ['start start', 'end end'] });
-  const smoothProgress = useSpring(scrollYProgress, { stiffness: 60, damping: 20, restDelta: 0.001 });
-  const rotateY = useTransform(smoothProgress, [0, 1], [0, -360]);
-  return (
-    <div ref={sectionRef} className={styles.cgOuter}>
-      <div className={styles.cgSticky}>
-        <motion.div className={styles.cgHeader} style={{ opacity: useTransform(smoothProgress, [0, 0.12], [1, 0]) }}>
-          <p className={styles.categoriesEyebrow}>What We Retail</p>
-          <h2 className={styles.categoriesTitle}>Categories in every store<br />format.</h2>
-          <p className={styles.cgHint}>Scroll to explore ↓</p>
-        </motion.div>
-        <div className={styles.cgScene}>
-          <motion.div className={styles.cgRing} style={{ rotateY }}>
-            {CATEGORIES_GALLERY.map((cat, i) => {
-              const angle = (360 / count) * i;
-              return (
-                <div key={cat.id} className={styles.cgFace} style={{ transform: `rotateY(${angle}deg) translateZ(${RADIUS}px)`, background: cat.bg }}>
-                  <div className={styles.cgImageWrap}><img src={cat.image} alt={cat.name} className={styles.cgImage} /></div>
-                  <div className={styles.cgBody}><h3 className={styles.cgName}>{cat.name}</h3><p className={styles.cgDesc}>{cat.desc}</p></div>
-                </div>
-              );
-            })}
-          </motion.div>
-        </div>
-        <div className={styles.cgDots} aria-hidden="true">
-          {CATEGORIES_GALLERY.map((cat, i) => (
-            <motion.span key={cat.id} className={styles.cgDot} style={{ opacity: useTransform(smoothProgress, [(i / count) - 0.04, i / count, (i / count) + 0.04], [0.3, 1, 0.3]), scale: useTransform(smoothProgress, [(i / count) - 0.04, i / count, (i / count) + 0.04], [1, 1.6, 1]) }} />
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
 
 const CATEGORIES = [
-  { name: 'Smartphones', desc: 'The latest devices from every major mobile brand, ready to test in-store.' },
-  { name: 'Tablets', desc: 'A curated range for work, study and entertainment.' },
-  { name: 'Wearables', desc: 'Smartwatches and fitness bands from trusted names.' },
-  { name: 'Accessories', desc: 'Cases, chargers, audio and everyday mobile essentials.' },
-  { name: 'Electronics', desc: 'Additional gadgets and lifestyle electronics by store format.' },
+  { id: 'smartphones', name: 'Smartphones', desc: 'The latest devices, ready to experience in person.', image: '/About-section/Smartphones.png' },
+  { id: 'tablets', name: 'Tablets', desc: 'For work, learning and everything between.', image: '/About-section/Tablet.png' },
+  { id: 'wearables', name: 'Wearables', desc: 'Connected technology that moves with you.', image: '/About-section/Watches.png' },
+  { id: 'accessories', name: 'Accessories', desc: 'The essentials that complete every device.', image: '/About-section/Accessories.png' },
+  { id: 'electronics', name: 'Electronics', desc: 'Smart devices and lifestyle technology for every space.', image: '/About-section/Electornics.png' },
 ];
 
 export default function BrandsPage() {
+  const [showAllCategories, setShowAllCategories] = useState(false);
   return (
     <SiteShell>
       <main id="main-content">
@@ -87,45 +50,47 @@ export default function BrandsPage() {
           <CircularTestimonials testimonials={STORE_TESTIMONIALS} autoplay={true} />
         </div>
 
-        <section id="brand-partners" className={`relative ${styles.partnersSection}`} aria-label="Authorized partners" style={{background:'#e5e0d8',paddingBottom:0,borderBottom:'1px solid #ece7dd', display:'grid', justifyContent:'center', alignItems:'center'}}>
-          <ContainerStagger className={`${styles.partnersContainer} relative z-[9999] place-self-center text-center`} style={{paddingBottom: 28, paddingTop: 48, margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
-            <ContainerAnimated>
-              <p className={styles.partnersEyebrow}>Our Authorized Partners</p>
-            </ContainerAnimated>
-            <ContainerAnimated>
-              <h2 className="font-serif text-4xl font-extralight md:text-5xl mt-2 text-[#2d2d2d]" style={{ lineHeight: 1.2, fontSize: '3rem' }}>
-                We proudly retail devices from the <br/>
-                <span className="font-serif font-extralight text-indigo-600">
-                  industry&apos;s most recognized names.
-                </span>
-              </h2>
-            </ContainerAnimated>
-            <ContainerAnimated className="my-4">
-              <p className="leading-normal tracking-tight text-muted-foreground mt-4" style={{ color: '#666', fontSize: '1.125rem', width: '100vh', margin: '0 auto' }}>
-                Every brand is built for a different market and store size, and every one of them carries the same sourcing strength, service quality and brand credibility.
-              </p>
-            </ContainerAnimated>
-          </ContainerStagger>
-
-          <ContainerScroll className="relative h-[350vh]">
-            <ContainerSticky className="h-svh">
-              <GalleryContainer className="grid-cols-3 max-w-[1100px] w-full px-6" >
-                <GalleryCol yRange={["-5%", "5%"]} style={{ gap: '10px' }}>
-                  {BRAND_CARDS_1.map((s,i)=><img key={i} src={s} alt="brand card" className="w-full h-auto rounded-xl object-contain bg-[#e5e0d8] border border-[#d8d2c8] shadow-sm" style={{aspectRatio:'400/260'}} />)}
-                </GalleryCol>
-                <GalleryCol yRange={["0%", "0%"]} style={{ gap: '10px' }}>
-                  {BRAND_CARDS_2.map((s,i)=><img key={i} src={s} alt="brand card" className="w-full h-auto rounded-xl object-contain bg-[#e5e0d8] border border-[#d8d2c8] shadow-sm" style={{aspectRatio:'400/310'}} />)}
-                </GalleryCol>
-                <GalleryCol yRange={["5%", "-5%"]} style={{ gap: '10px' }}>
-                  {BRAND_CARDS_3.map((s,i)=><img key={i} src={s} alt="brand card" className="w-full h-auto rounded-xl object-contain bg-[#e5e0d8] border border-[#d8d2c8] shadow-sm" style={{aspectRatio:'400/265'}} />)}
-                </GalleryCol>
-              </GalleryContainer>
-            </ContainerSticky>
-          </ContainerScroll>
+        <section id="brand-partners" className={styles.partnersSection} aria-labelledby="partners-title">
+          <div className={styles.partnersContainer}>
+            <p className={styles.partnersEyebrow}>Our Authorized Partners</p>
+            <h2 className={styles.partnersTitle} id="partners-title">Trusted names, <span>closer to home.</span></h2>
+            <p className={styles.partnersIntro}>Explore the mobile and technology brands available across our retail network.</p>
+          </div>
+          <CoverflowCarousel slides={PARTNER_BRANDS} />
         </section>
 
-        <section className={styles.categoriesSection}>
-          <CircularGallery />
+        <section id="retail-categories" className={styles.categoriesSection} aria-labelledby="categories-title">
+          <div className={styles.categoriesContainer}>
+            <div className={styles.categoriesHeader}>
+              <div>
+                <h2 id="categories-title" className={styles.categoriesTitle}>Technology for<br /><em>everyday life.</em></h2>
+                <p className={styles.categoriesIntro}>Discover devices and connected essentials across our retail formats.</p>
+              </div>
+              <button
+                type="button"
+                className={styles.categoriesToggle}
+                aria-expanded={showAllCategories}
+                aria-controls="category-grid"
+                onClick={() => setShowAllCategories((value) => !value)}
+              >
+                {showAllCategories ? 'Show fewer categories' : 'View every category'}
+                <span aria-hidden="true">{showAllCategories ? '↖' : '↗'}</span>
+              </button>
+            </div>
+            <div id="category-grid" className={styles.categoriesGrid}>
+              {CATEGORIES.slice(0, showAllCategories ? CATEGORIES.length : 4).map((category, index) => (
+                <article key={category.id} className={`${styles.categoryCard}${index === 4 ? ` ${styles.categoryCardExtra}` : ''}`}>
+                  <div className={styles.categoryImageWrap}>
+                    <Image src={category.image} alt="" fill sizes={index === 4 ? '(max-width: 700px) 100vw, 50vw' : '(max-width: 700px) 100vw, (max-width: 1100px) 50vw, 25vw'} className={styles.categoryImage} />
+                  </div>
+                  <div className={styles.categoryBody}>
+                    <h3>{category.name}</h3>
+                    <p>{category.desc}</p>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
         </section>
 
         <section className={styles.ctaSection}>

@@ -6,12 +6,13 @@ import {
   sheetStore,
   detectVariant,
   drawCoverSlice,
+  ZERO_URL,
   type Slice,
   type Variant,
 } from '@/lib/asset-loader';
 
 const GROW_FRAMES = 5;
-const ZERO_SRC = '/store_img.png';
+const ZERO_SRC = ZERO_URL;
 // First 6 frames (0-5) dwell over this share of scroll so the
 // image-div -> fullscreen grow is actually visible (not 90px).
 const GROW_SPLIT = 0.22;

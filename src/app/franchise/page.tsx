@@ -1,4 +1,5 @@
 import SiteShell from '@/components/SiteShell';
+import BusinessModelSections from '@/components/BusinessModelSections';
 import styles from './franchise.module.css';
 
 const BENEFITS = [
@@ -148,7 +149,7 @@ export default function FranchisePage() {
             </div>
           </div>
         </section>
-
+        <BusinessModelSections />
         <section className={styles.ctaDark}>
           <div className={styles.ctaDarkContainer}>
             <p className={styles.eyebrow} style={{color:'#c19a5f'}}>Next Step</p>

@@ -1,0 +1,165 @@
+.carousel {
+  width: 100%;
+  padding: 34px 0 68px;
+  --card-width: clamp(224px, 27vw, 310px);
+}
+.frame {
+  position: relative;
+  overflow: hidden;
+  padding: 34px 0 46px;
+  cursor: grab;
+  touch-action: pan-y;
+  outline: none;
+}
+.frame:active { cursor: grabbing; }
+.frame:focus-visible { outline: 2px solid #bd884e; outline-offset: -4px; }
+.stage {
+  position: relative;
+  height: calc(var(--card-width) * 1.07);
+  perspective: calc(var(--card-width) * 3.2);
+  user-select: none;
+}
+.card {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: var(--card-width);
+  overflow: hidden;
+  border: 1px solid #e4e1dc;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 15px 45px #2820181a;
+  backface-visibility: hidden;
+  will-change: transform, opacity;
+}
+.active { box-shadow: 0 24px 60px #28201829; }
+.logoSurface {
+  height: calc(var(--card-width) * 0.72);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  isolation: isolate;
+  background: #f4f4f5;
+}
+.logoMask {
+  display: block;
+  width: 84%;
+  height: 100%;
+  mask-position: center;
+  mask-repeat: no-repeat;
+  mask-size: contain;
+  -webkit-mask-position: center;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-size: contain;
+}
+.logoSymbol { width: 40%; height: 57%; }
+.logoImage {
+  display: block;
+  width: min(60%, 168px);
+  aspect-ratio: 1;
+  object-fit: contain;
+}
+.logoImageInverted,
+.logoImageBlended {
+  width: 84%;
+  mix-blend-mode: multiply;
+}
+.logoImageInverted {
+  filter: invert(1) brightness(1.2);
+  clip-path: inset(2%);
+}
+.logoImageBanner {
+  width: 84%;
+  height: 34%;
+  aspect-ratio: auto;
+  object-fit: cover;
+  object-position: center;
+}
+.cardCaption {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: calc(var(--card-width) * 0.35);
+  padding: 15px 12px;
+  text-align: center;
+}
+.cardCaption strong {
+  color: #211d19;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.cardCaption span {
+  color: #89817a;
+  font-size: 11px;
+  letter-spacing: 0.03em;
+}
+/* Firefox can flash a rounded overflow clip on a moving 3D card. Clip its flat children instead. */
+.frame[data-firefox='true'] .card {
+  overflow: visible;
+  backface-visibility: visible;
+}
+.frame[data-firefox='true'] .logoSurface { border-radius: 11px 11px 0 0; }
+.frame[data-firefox='true'] .cardCaption {
+  border-radius: 0 0 11px 11px;
+  background: #fff;
+}
+.controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  min-height: 48px;
+}
+.controls button {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #d6cec3;
+  border-radius: 50%;
+  background: #fff;
+  color: #211d19;
+  cursor: pointer;
+  transition: background .2s ease, color .2s ease, transform .2s ease;
+}
+.controls button:hover { background: #211d19; color: #fff; transform: translateY(-2px); }
+.controls p {
+  width: 148px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+  margin: 0;
+  color: #211d19;
+  font-size: 13px;
+}
+.controls p span { color: #8a8179; font-size: 11px; white-space: nowrap; }
+.pagination {
+  display: flex;
+  justify-content: center;
+  gap: 7px;
+  margin-top: 20px;
+}
+.pagination button {
+  width: 6px;
+  height: 6px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: #c9c0b7;
+  cursor: pointer;
+  transition: background .2s ease, transform .2s ease;
+}
+.pagination button[aria-current="true"] { background: #bd884e; transform: scale(1.5); }
+@media (max-width: 640px) {
+  .carousel { --card-width: min(66vw, 274px); padding: 24px 0 44px; }
+  .frame { padding: 24px 0 34px; }
+  .controls { gap: 15px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .card, .controls button, .pagination button { transition: none; }
+}
