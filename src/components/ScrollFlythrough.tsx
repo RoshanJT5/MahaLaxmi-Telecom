@@ -3,9 +3,9 @@
 import { useEffect, useRef, useState } from 'react';
 import styles from './ScrollFlythrough.module.css';
 import {
-  sheetStore,
+  frameStore,
   detectVariant,
-  drawCoverSlice,
+  drawFrameSlice,
   ZERO_URL,
   type Slice,
   type Variant,
@@ -47,21 +47,21 @@ export default function ScrollFlythrough({ embedded = false, takeover = false }:
     if (!ctx) return;
 
     const variant: Variant = detectVariant();
-    // Display idx 0 = zeroth frame (store image); idx d>0 = sheet frame d-1.
-    let count = variant === 'desktop' ? 256 : 129;
+    let mobile = variant === 'mobile';
+    let stacked = window.matchMedia('(max-width: 1100px)').matches;
+    // Display idx 0 = the opening still; idx d>0 = video frame d-1.
+    let count = 256;
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     let lastSlice: Slice | null = null;
     let showingZero = true;
-    let zeroImg: HTMLImageElement | null = sheetStore.zeroImg;
+    let zeroImg: HTMLImageElement | null = frameStore.zeroImg;
+    const containFrame = () => mobile || (takeover && stacked);
     const drawCover = (img: HTMLImageElement) => {
-      const cw = canvas.width;
-      const ch = canvas.height;
-      if (!cw || !ch || !img.naturalWidth) return;
-      const s = Math.max(cw / img.naturalWidth, ch / img.naturalHeight);
-      const dw = img.naturalWidth * s;
-      const dh = img.naturalHeight * s;
-      ctx.drawImage(img, (cw - dw) / 2, (ch - dh) / 2, dw, dh);
+      if (!img.naturalWidth) return;
+      drawFrameSlice(ctx, canvas, {
+        img, sx: 0, sy: 0, sw: img.naturalWidth, sh: img.naturalHeight,
+      }, containFrame());
       showingZero = true;
       lastSlice = null;
     };
@@ -69,7 +69,7 @@ export default function ScrollFlythrough({ embedded = false, takeover = false }:
       if (showingZero) {
         if (zeroImg?.naturalWidth) drawCover(zeroImg);
       } else if (lastSlice) {
-        drawCoverSlice(ctx, canvas, lastSlice);
+        drawFrameSlice(ctx, canvas, lastSlice, containFrame());
       }
     };
     const sizeCanvas = () => {
@@ -77,7 +77,13 @@ export default function ScrollFlythrough({ embedded = false, takeover = false }:
       // so the backing store tracks the stage exactly as it grows.
       const w = canvas.clientWidth || canvas.getBoundingClientRect().width;
       const h = canvas.clientHeight || canvas.getBoundingClientRect().height;
-      const dpr = Math.min(1.75, window.devicePixelRatio || 1);
+      const deviceDpr = window.devicePixelRatio || 1;
+      const { width: frameWidth, height: frameHeight } = frameStore.frameSize;
+      // Rendering past the source resolution upscales the frame, then the
+      // browser downsamples the canvas again. This matters on high-density
+      // desktop and mobile screens, especially now that both use cover.
+      const sourceDpr = Math.max(1, Math.min(frameWidth / Math.max(1, w), frameHeight / Math.max(1, h)));
+      const dpr = Math.min(deviceDpr, sourceDpr, mobile ? 2.5 : Number.POSITIVE_INFINITY);
       const W = Math.max(2, Math.round(w * dpr));
       const H = Math.max(2, Math.round(h * dpr));
       if (canvas.width !== W || canvas.height !== H) {
@@ -92,6 +98,7 @@ export default function ScrollFlythrough({ embedded = false, takeover = false }:
     let target = 0;
     let current = -1;
     let raf = 0;
+    let paintedIndex = -1;
     type StartRect = { l: number; t: number; w: number; h: number; r: number };
     let start: StartRect | null = null;
     let placed = false;
@@ -117,6 +124,13 @@ export default function ScrollFlythrough({ embedded = false, takeover = false }:
     };
     const placeWrap = () => {
       if (placed || !takeover) return;
+      // The first flythrough frame is the still image on stacked layouts.
+      // Keep its section after the company copy without desktop overlap.
+      if (stacked) {
+        wrap.style.marginTop = '0px';
+        placed = true;
+        return;
+      }
       const src = getSource();
       if (!src) return;
       if (wrap.getBoundingClientRect().top < window.innerHeight) return;
@@ -143,6 +157,24 @@ export default function ScrollFlythrough({ embedded = false, takeover = false }:
       const stage = stageRef.current;
       const sticky = stickyRef.current;
       if (!takeover || !stage || !sticky) return;
+      if (stacked) {
+        // Keep frame zero visible as this section enters, then reveal the
+        // scroll copy only once the sticky animation reaches the viewport.
+        stage.style.opacity = '1';
+        stage.style.left = '0px';
+        stage.style.top = '0px';
+        stage.style.width = `${(sticky.clientWidth || window.innerWidth).toFixed(1)}px`;
+        stage.style.height = `${(sticky.clientHeight || window.innerHeight).toFixed(1)}px`;
+        stage.style.borderRadius = '0px';
+        stage.style.pointerEvents = phase === 'before' ? 'none' : 'auto';
+        setSourceHidden(false);
+        if (copyRef.current) {
+          copyRef.current.style.opacity = phase === 'before' ? '0' : '1';
+          copyRef.current.style.transform = 'translateY(0px)';
+        }
+        sizeCanvas();
+        return;
+      }
       if (phase === 'before') {
         stage.style.opacity = '0';
         stage.style.pointerEvents = 'none';
@@ -192,41 +224,48 @@ export default function ScrollFlythrough({ embedded = false, takeover = false }:
     };
     let phaseCache: Phase = 'before';
     const drawFrame = (idx: number) => {
+      if (idx === paintedIndex) return;
       if (idx === 0) {
         if (zeroImg?.complete && zeroImg.naturalWidth) {
           showingZero = true;
           lastSlice = null;
           drawCover(zeroImg);
+          paintedIndex = idx;
         }
         return;
       }
-      const slice = sheetStore.getSlice(idx - 1);
+      const slice = frameStore.getSlice(idx - 1);
       if (slice) {
         showingZero = false;
         lastSlice = slice;
-        drawCoverSlice(ctx, canvas, slice);
+        drawFrameSlice(ctx, canvas, slice, containFrame());
+        paintedIndex = idx;
         return;
       }
-      // Sheet still decoding — paint it the moment it arrives, if still current.
+      // Frame still decoding — paint it the moment it arrives, if still current.
       const wanted = idx;
-      const sheetIndex = sheetStore.sheetIndexOf(idx - 1);
-      if (sheetIndex === null) return;
-      sheetStore
-        .ensureSheet(sheetIndex)
+      frameStore
+        .ensureFrame(idx - 1)
         ?.then(() => {
           if (Math.round(frameFloatFromP(current, count)) !== wanted) return;
-          const s2 = sheetStore.getSlice(wanted - 1);
+          const s2 = frameStore.getSlice(wanted - 1);
           if (s2) {
             showingZero = false;
             lastSlice = s2;
-            drawCoverSlice(ctx, canvas, s2);
+            drawFrameSlice(ctx, canvas, s2, containFrame());
+            paintedIndex = wanted;
           }
         })
         .catch(() => {});
     };
     const render = () => {
-      raf = requestAnimationFrame(render);
-      if (Math.abs(target - current) < 0.0005) return;
+      raf = 0;
+      if (Math.abs(target - current) < 0.0005) {
+        current = target;
+        const finalFrame = frameFloatFromP(current, count);
+        drawFrame(Math.max(0, Math.min(count - 1, Math.round(finalFrame))));
+        return;
+      }
       current += (target - current) * 0.16;
       const frameFloat = frameFloatFromP(current, count);
       const idx = Math.max(0, Math.min(count - 1, Math.round(frameFloat)));
@@ -234,6 +273,11 @@ export default function ScrollFlythrough({ embedded = false, takeover = false }:
       drawFrame(idx);
       const beat = Math.min(BEATS.length - 1, Math.floor((idx / (count - 1)) * BEATS.length));
       setActive((p) => (p === beat ? p : beat));
+      raf = requestAnimationFrame(render);
+    };
+
+    const requestRender = () => {
+      if (!raf) raf = requestAnimationFrame(render);
     };
 
     const onScroll = () => {
@@ -242,6 +286,7 @@ export default function ScrollFlythrough({ embedded = false, takeover = false }:
       const total = rect.height - window.innerHeight;
       const p = total <= 0 ? 0 : Math.max(0, Math.min(1, -rect.top / total));
       target = p;
+      requestRender();
       if (takeover) {
         phaseCache = getPhase();
         layoutStage(frameFloatFromP(p, count), phaseCache);
@@ -252,13 +297,13 @@ export default function ScrollFlythrough({ embedded = false, takeover = false }:
       setLoaded(5);
       try {
         // Shares the home-page preload (no double download); runs it standalone otherwise.
-        await sheetStore.ensure(variant);
+        await frameStore.ensure(variant);
       } catch {
         /* sheets decode lazily at runtime */
       }
-      count = sheetStore.flyTotal > 0 ? sheetStore.flyTotal + 1 : count;
+      count = frameStore.flyTotal > 0 ? frameStore.flyTotal + 1 : count;
       if (!zeroImg || !zeroImg.naturalWidth) {
-        const fromStore = sheetStore.zeroImg;
+        const fromStore = frameStore.zeroImg;
         if (fromStore?.naturalWidth) {
           zeroImg = fromStore;
         } else {
@@ -282,14 +327,18 @@ export default function ScrollFlythrough({ embedded = false, takeover = false }:
       const ff0 = frameFloatFromP(current, count);
       drawFrame(Math.round(ff0));
       layoutStage(ff0, phaseCache);
-      render();
+      requestRender();
     })();
 
     window.addEventListener('scroll', onScroll, { passive: true });
     const onResize = () => {
+      mobile = detectVariant() === 'mobile';
+      stacked = window.matchMedia('(max-width: 1100px)').matches;
       placed = false;
       placeWrap();
       sizeCanvas();
+      redraw();
+      onScroll();
     };
     window.addEventListener('resize', onResize);
     let ro: ResizeObserver | null = null;
@@ -312,8 +361,8 @@ export default function ScrollFlythrough({ embedded = false, takeover = false }:
     return (
       <div ref={wrapRef} className={styles.takeoverWrap}>
         <div ref={stickyRef} className={styles.takeoverSticky}>
-          {/* Morph stage: starts at the exact rect of #about-zero-frame
-              (frame 0 = same image), grows to fullscreen by frame 5. */}
+          {/* Desktop grows from #about-zero-frame; stacked layouts use this
+              opening frame as the sole storefront image. */}
           <div ref={stageRef} className={styles.morphStage}>
           <canvas ref={canvasRef} className={ready ? styles.canvasOn : styles.canvas} aria-label="Scroll-driven flythrough of Jagyasi Mobiles store" />
           {/* Zeroth frame — same asset as the image div above, so frame 0 matches exactly */}
@@ -360,7 +409,7 @@ export default function ScrollFlythrough({ embedded = false, takeover = false }:
     return (
       <div ref={wrapRef} className={styles.embedWrap}>
         <canvas ref={canvasRef} className={styles.embedCanvas} aria-label="Scroll-driven flythrough of Jagyasi Mobiles store" />
-        {!ready && <img src="/page-section2/poster.jpg" alt="" className={styles.embedPoster} aria-hidden="true" />}
+        {!ready && <img src={ZERO_SRC} alt="" className={styles.embedPoster} aria-hidden="true" />}
       </div>
     );
   }
@@ -369,7 +418,7 @@ export default function ScrollFlythrough({ embedded = false, takeover = false }:
     <div ref={wrapRef} className={styles.wrap} id="flythrough">
       <div className={styles.sticky}>
         <canvas ref={canvasRef} className={styles.canvas} aria-label="Scroll-driven flythrough of Jagyasi Mobiles store" />
-        {!ready && <img src="/page-section2/poster.jpg" alt="" className={styles.poster} aria-hidden="true" />}
+        {!ready && <img src={ZERO_SRC} alt="" className={styles.poster} aria-hidden="true" />}
         <div className={styles.scrim} aria-hidden="true" />
         <div className={styles.progress} aria-hidden="true">
           <span style={{ transform: `scaleX(${loaded / 100})` }} />

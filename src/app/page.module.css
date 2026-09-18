@@ -511,6 +511,7 @@
 		padding: 0;
 		grid-template-columns: 1fr;
 		min-height: auto;
+		height: auto;
 	}
 
 	.categoriesCopy {
@@ -523,17 +524,20 @@
 
 	.categoriesMedia {
 		display: grid;
-		grid-template-columns: 1fr 1fr;
-		height: auto;
-		max-height: none;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		height: clamp(380px, 100vw, 520px);
 		min-height: 0;
 		padding: 0 8px 8px 8px;
 		grid-row: 1;
 	}
 
 	.categoriesMedia > div {
-		height: auto;
+		height: 100%;
 		min-height: 0;
+	}
+
+	.categoriesMedia > div:nth-child(n + 3) {
+		display: none;
 	}
 
 	.sliderImg {
@@ -594,6 +598,8 @@
 }
 
 .aboutMedia {
+	grid-column: 1;
+	grid-row: 1;
 	height: 540px;
 	display: flex;
 	align-items: center;
@@ -605,15 +611,26 @@
 }
 
 .aboutMedia img {
-	width: 40vw;
-	height: auto;
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
 	display: block;
-	object-fit: contain;
+	object-fit: cover;
 	object-position: center;
 }
 
 .aboutCopy {
+	grid-column: 2;
+	grid-row: 1;
 	min-width: 0;
+}
+
+/* The flythrough's opening frame is the only store image on stacked layouts. */
+@media (max-width: 1100px) {
+	.aboutMedia {
+		display: none;
+	}
 }
 
 .aboutEyebrow {
@@ -687,21 +704,14 @@
 	.aboutContainer {
 		width: min(100% - 40px, 620px);
 		min-height: auto;
-		padding: 72px 0 40px;
-		grid-template-columns: 1fr;
+		padding: 72px 0 0;
+		grid-template-columns: minmax(0, 1fr);
 		gap: 28px;
 	}
 
-	.aboutMedia {
-		height: auto;
-		min-height: 320px;
-		padding: 32px 24px;
+	.aboutCopy {
+		grid-column: 1;
 		grid-row: 1;
-	}
-
-	.aboutMedia img {
-		width: 88%;
-		height: auto;
 	}
 
 	.aboutTitle {
@@ -925,6 +935,13 @@
 	border: 6px solid #f5f1eb;
 	background: #f5f1eb;
 	transform-origin: center;
+}
+
+@media (max-width: 1100px) {
+	.outletCard {
+		touch-action: pan-y;
+		user-select: none;
+	}
 }
 
 .outletCardImg {
@@ -1419,15 +1436,18 @@
 	}
 }
 
-/* ── Tablet (861–1100px): relieve fixed minimums, desktop untouched ── */
+/* Tablet: read the company story before the store flythrough. */
 @media (max-width: 1100px) and (min-width: 861px) {
 	.aboutContainer {
-		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+		grid-template-columns: minmax(0, 1fr);
 		gap: 40px;
-		width: min(100% - 48px, 1500px);
+		width: min(100% - 48px, 900px);
+		min-height: auto;
+		padding-bottom: 0;
 	}
 
-	.aboutMedia {
-		height: 480px;
+	.aboutCopy {
+		grid-column: 1;
+		grid-row: 1;
 	}
 }

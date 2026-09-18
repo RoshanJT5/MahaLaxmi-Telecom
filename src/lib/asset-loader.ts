@@ -1,31 +1,7 @@
 'use client';
 
-// Production asset pipeline for the scroll flythrough.
-// - First paint asset (Mahalaxmi logo) is preloaded before the loader UI appears.
-// - Flythrough frames ship as 6 spritesheets per variant; bytes are streamed with
-//   real progress and persisted in Cache Storage, so repeat visits never
-//   re-download them (only decode on demand with a ±1 sheet memory window).
-
-export interface SheetInfo {
-  file: string;
-  start: number;
-  count: number;
-}
-
-export interface SheetManifest {
-  cellW: number;
-  cellH: number;
-  cols: number;
-  rows: number;
-  total: number;
-  sheets: SheetInfo[];
-}
-
-export interface FlyManifest {
-  desktop: SheetManifest;
-  mobile: SheetManifest;
-}
-
+// Full-HD WebP frames extracted directly from the source video. A small group
+// is decoded for first paint; remaining bytes are cached in the background.
 export type Variant = 'desktop' | 'mobile';
 
 export interface Slice {
@@ -36,11 +12,17 @@ export interface Slice {
   sh: number;
 }
 
-const CACHE_NAME = 'mahalaxmi-assets-v1';
-const MANIFEST_URL = '/page-section2/sheets/manifest.json';
-const SHEET_BASE = '/page-section2/';
+interface FrameManifest {
+  total: number;
+  width: number;
+  height: number;
+}
+
+const CACHE_NAME = 'mahalaxmi-flythrough-hd-v1';
+const MANIFEST_URL = '/page-section2/hires/manifest.json';
+const FRAME_BASE = '/page-section2/hires/';
 const LOGO_URL = '/mahalaxmi-logo.png';
-export const ZERO_URL = '/store_img.png';
+export const ZERO_URL = `${FRAME_BASE}frame-000.webp`;
 const HERO_URLS = [
   '/page-section1/hero-store.jpg',
   '/page-section1/products.jpg',
@@ -50,310 +32,222 @@ const HERO_URLS = [
 ];
 
 export const detectVariant = (): Variant =>
-  typeof window !== 'undefined' &&
-  window.matchMedia('(max-width: 860px), (pointer: coarse)').matches
+  typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches
     ? 'mobile'
     : 'desktop';
 
+const frameUrl = (index: number) => `${FRAME_BASE}frame-${String(index).padStart(3, '0')}.webp`;
+
 const getCache = async (): Promise<Cache | null> => {
   try {
-    if (typeof caches !== 'undefined') return await caches.open(CACHE_NAME);
+    return typeof caches === 'undefined' ? null : await caches.open(CACHE_NAME);
   } catch {
-    /* storage unavailable (private mode) — fall through to network */
-  }
-  return null;
-};
-
-const decodeBlob = (buffer: ArrayBuffer, mime = 'image/jpeg'): Promise<HTMLImageElement> =>
-  new Promise((resolve, reject) => {
-    const url = URL.createObjectURL(new Blob([buffer], { type: mime }));
-    const im = new Image();
-    im.onload = () => {
-      URL.revokeObjectURL(url);
-      resolve(im);
-    };
-    im.onerror = () => {
-      URL.revokeObjectURL(url);
-      reject(new Error('decode failed'));
-    };
-    im.src = url;
-  });
-
-const decodeImage = (src: string): Promise<HTMLImageElement> =>
-  new Promise((resolve, reject) => {
-    const im = new Image();
-    im.onload = () => resolve(im);
-    im.onerror = () => reject(new Error(`decode failed: ${src}`));
-    im.src = src;
-  });
-
-/** First-paint asset: the Mahalaxmi logo shown on the loading screen. */
-export const preloadLogo = async (): Promise<void> => {
-  try {
-    await decodeImage(LOGO_URL);
-  } catch {
-    /* loader still shows (text lockup renders regardless) */
+    return null;
   }
 };
 
-type ByteState = { loaded: number; total: number };
-
-async function fetchBytes(
-  url: string,
-  cache: Cache | null,
-  onBytes: (loaded: number, total: number | null) => void,
-): Promise<ArrayBuffer> {
+async function fetchBytes(url: string, cache: Cache | null): Promise<ArrayBuffer> {
   try {
     const hit = await cache?.match(url);
-    if (hit) {
-      const buffer = await hit.arrayBuffer();
-      onBytes(buffer.byteLength, buffer.byteLength);
-      return buffer;
-    }
+    if (hit) return hit.arrayBuffer();
   } catch {
-    /* ignore cache errors */
+    // Private browsing can disable Cache Storage.
   }
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`fetch failed: ${url}`);
-  const total = Number(res.headers.get('content-length')) || 0;
-  if (!res.body) {
-    const buffer = await res.arrayBuffer();
-    onBytes(buffer.byteLength, buffer.byteLength);
-    return buffer;
-  }
-  const reader = res.body.getReader();
-  const chunks: Uint8Array[] = [];
-  let loaded = 0;
-  for (;;) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    if (value) {
-      chunks.push(value);
-      loaded += value.byteLength;
-      onBytes(loaded, total || null);
-    }
-  }
-  const merged = new Uint8Array(loaded);
-  let off = 0;
-  for (const c of chunks) {
-    merged.set(c, off);
-    off += c.byteLength;
-  }
-  const buffer = merged.buffer as ArrayBuffer;
+
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`Asset fetch failed: ${url}`);
+  const bytes = await response.arrayBuffer();
   try {
-    await cache?.put(
-      url,
-      new Response(buffer.slice(0), { headers: { 'content-length': String(loaded) } }),
-    );
+    await cache?.put(url, new Response(bytes.slice(0)));
   } catch {
-    /* quota / private mode — page still works, just refetches */
+    // The in-memory bytes remain usable if the device has no cache quota.
   }
-  onBytes(loaded, loaded);
-  return buffer;
+  return bytes;
 }
 
-async function fetchGroup(
-  urls: string[],
-  cache: Cache | null,
-  estimate: number,
-  onGroup: (fraction: number) => void,
-): Promise<Map<string, ArrayBuffer>> {
-  const state = new Map<string, ByteState>(urls.map((u) => [u, { loaded: 0, total: 0 }]));
-  const emit = () => {
-    let loaded = 0;
-    let total = 0;
-    for (const [, s] of state) {
-      loaded += s.loaded;
-      total += s.total || estimate;
-    }
-    onGroup(total > 0 ? Math.min(1, loaded / total) : 0);
-  };
-  const results = new Map<string, ArrayBuffer>();
-  await Promise.all(
-    urls.map(async (url) => {
-      const st = state.get(url)!;
-      const buffer = await fetchBytes(url, cache, (l, t) => {
-        st.loaded = l;
-        st.total = t || estimate;
-        emit();
-      });
-      results.set(url, buffer);
-      emit();
-    }),
-  );
-  return results;
-}
+const decodeBlob = (bytes: ArrayBuffer): Promise<HTMLImageElement> =>
+  new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(new Blob([bytes], { type: 'image/webp' }));
+    const image = new Image();
+    image.onload = () => {
+      URL.revokeObjectURL(url);
+      resolve(image);
+    };
+    image.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error('Frame decode failed'));
+    };
+    image.src = url;
+  });
 
-class SheetStore {
-  manifest: FlyManifest | null = null;
-  variant: Variant = 'desktop';
-  zeroImg: HTMLImageElement | null = null;
-  sheetBuffers = new Map<string, ArrayBuffer>();
-  private sheetImgs = new Map<number, HTMLImageElement>();
-  private sheetTasks = new Map<number, Promise<HTMLImageElement>>();
-  private lastServed = 0;
+export const preloadLogo = async (): Promise<void> => {
+  try {
+    await new Promise<void>((resolve) => {
+      const image = new Image();
+      image.onload = image.onerror = () => resolve();
+      image.src = LOGO_URL;
+    });
+  } catch {
+    // The text lockup is still available if the logo is offline.
+  }
+};
+
+class FrameStore {
+  private manifest: FrameManifest | null = null;
+  private cache: Cache | null = null;
+  private buffers = new Map<number, ArrayBuffer>();
+  private bufferTasks = new Map<number, Promise<ArrayBuffer>>();
+  private images = new Map<number, HTMLImageElement>();
+  private imageTasks = new Map<number, Promise<HTMLImageElement>>();
   private readyPromise: Promise<void> | null = null;
-
-  ensure(variant: Variant, onProgress?: (fraction: number) => void): Promise<void> {
-    this.variant = variant;
-    if (!this.readyPromise) this.readyPromise = this.run(variant, onProgress ?? (() => {}));
-    return this.readyPromise;
-  }
-
-  get ready(): Promise<void> | null {
-    return this.readyPromise;
-  }
+  zeroImg: HTMLImageElement | null = null;
 
   get flyTotal(): number {
-    return this.manifest?.[this.variant].total ?? 0;
+    return this.manifest?.total ?? 0;
   }
 
-  private async run(variant: Variant, onProgress: (fraction: number) => void): Promise<void> {
-    const emit = (p: number) => onProgress(Math.max(0, Math.min(1, p)));
-    const cache = await getCache();
-
-    const manifest: FlyManifest = await (await fetch(MANIFEST_URL)).json();
-    this.manifest = manifest;
-    emit(0.04);
-
-    const m = manifest[variant];
-    const sheetUrls = m.sheets.map((s) => SHEET_BASE + s.file);
-    const sheetBufs = await fetchGroup(sheetUrls, cache, 2_000_000, (f) => emit(0.04 + f * 0.62));
-    for (const [url, buf] of sheetBufs) this.sheetBuffers.set(url, buf);
-
-    const smallUrls = [ZERO_URL, ...HERO_URLS];
-    const smallBufs = await fetchGroup(smallUrls, cache, 250_000, (f) => emit(0.66 + f * 0.26));
-
-    const zeroBuf = smallBufs.get(ZERO_URL);
-    if (zeroBuf) {
-      try {
-        this.zeroImg = await decodeBlob(zeroBuf);
-      } catch {
-        this.zeroImg = null;
-      }
-    }
-    // Decode sheet 0 now so first scroll paints instantly; the rest decode on demand.
-    try {
-      await this.ensureSheet(0);
-    } catch {
-      /* sheets decode lazily at runtime */
-    }
-    await Promise.all(
-      HERO_URLS.map(async (u) => {
-        const buf = smallBufs.get(u);
-        if (buf) {
-          try {
-            await decodeBlob(buf);
-          } catch {
-            /* non-fatal */
-          }
-        }
-      }),
-    );
-    emit(1);
+  get frameSize(): { width: number; height: number } {
+    return this.manifest
+      ? { width: this.manifest.width, height: this.manifest.height }
+      : { width: 1920, height: 1080 };
   }
 
-  private sheetUrl(index: number): string | null {
-    const m = this.manifest?.[this.variant];
-    const info = m?.sheets[index];
-    return info ? SHEET_BASE + info.file : null;
-  }
-
-  private async decodeFromBuffer(url: string): Promise<HTMLImageElement> {
-    const buf = this.sheetBuffers.get(url);
-    if (buf) return decodeBlob(buf);
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`sheet fetch failed: ${url}`);
-    return decodeBlob(await res.arrayBuffer());
-  }
-
-  ensureSheet(index: number): Promise<HTMLImageElement> | null {
-    const url = this.sheetUrl(index);
-    if (!url) return null;
-    const have = this.sheetImgs.get(index);
-    if (have) return Promise.resolve(have);
-    const pending = this.sheetTasks.get(index);
-    if (pending) return pending;
-    const task = this.decodeFromBuffer(url)
-      .then((img) => {
-        this.sheetTasks.delete(index);
-        this.sheetImgs.set(index, img);
-        if (Math.abs(index - this.lastServed) > 1) this.evict(index);
-        return img;
-      })
-      .catch((err) => {
-        this.sheetTasks.delete(index);
-        throw err;
+  ensure(_variant: Variant, onProgress: (fraction: number) => void = () => {}): Promise<void> {
+    if (!this.readyPromise) {
+      this.readyPromise = this.start(onProgress).catch((error) => {
+        this.readyPromise = null;
+        throw error;
       });
-    this.sheetTasks.set(index, task);
+    }
+    return this.readyPromise;
+  }
+
+  private async start(onProgress: (fraction: number) => void): Promise<void> {
+    this.cache = await getCache();
+    const response = await fetch(MANIFEST_URL);
+    if (!response.ok) throw new Error('Flythrough manifest unavailable');
+    this.manifest = (await response.json()) as FrameManifest;
+    if (!this.manifest.total || this.manifest.width < 1 || this.manifest.height < 1) {
+      throw new Error('Invalid flythrough manifest');
+    }
+    onProgress(0.08);
+
+    const initial = Math.min(12, this.manifest.total);
+    let fetched = 0;
+    await Promise.all(Array.from({ length: initial }, (_, index) =>
+      this.getBuffer(index).then(() => onProgress(0.08 + (++fetched / initial) * 0.67)),
+    ));
+    const openingFrame = this.ensureFrame(0);
+    if (openingFrame) this.zeroImg = await openingFrame;
+    await Promise.all(HERO_URLS.map((url) => fetchBytes(url, this.cache).catch(() => null)));
+    onProgress(1);
+
+    // Fetch compressed bytes while the visitor reads the opening sections.
+    // Decoding stays limited to nearby frames to protect mobile memory.
+    void this.prefetchRemaining(initial);
+  }
+
+  private async prefetchRemaining(start: number): Promise<void> {
+    let next = start;
+    const worker = async () => {
+      while (next < this.flyTotal) {
+        const index = next++;
+        try {
+          await this.getBuffer(index);
+        } catch {
+          // On-demand loading retries frames that failed in the background.
+        }
+      }
+    };
+    await Promise.all(Array.from({ length: 3 }, worker));
+  }
+
+  private getBuffer(index: number): Promise<ArrayBuffer> {
+    if (index < 0 || index >= this.flyTotal) return Promise.reject(new Error('Frame out of range'));
+    const existing = this.buffers.get(index);
+    if (existing) return Promise.resolve(existing);
+    const pending = this.bufferTasks.get(index);
+    if (pending) return pending;
+    const task = fetchBytes(frameUrl(index), this.cache)
+      .then((bytes) => {
+        this.bufferTasks.delete(index);
+        this.buffers.set(index, bytes);
+        return bytes;
+      })
+      .catch((error) => {
+        this.bufferTasks.delete(index);
+        throw error;
+      });
+    this.bufferTasks.set(index, task);
     return task;
   }
 
-  private evict(except: number): void {
-    for (const [key, img] of this.sheetImgs) {
-      if (Math.abs(key - except) > 1) {
-        try {
-          img.src = '';
-        } catch {
-          /* noop */
-        }
-        this.sheetImgs.delete(key);
+  ensureFrame(index: number): Promise<HTMLImageElement> | null {
+    if (index < 0 || index >= this.flyTotal) return null;
+    const image = this.images.get(index);
+    if (image) return Promise.resolve(image);
+    const pending = this.imageTasks.get(index);
+    if (pending) return pending;
+    const task = this.getBuffer(index)
+      .then(decodeBlob)
+      .then((decoded) => {
+        this.imageTasks.delete(index);
+        this.images.set(index, decoded);
+        return decoded;
+      })
+      .catch((error) => {
+        this.imageTasks.delete(index);
+        throw error;
+      });
+    this.imageTasks.set(index, task);
+    return task;
+  }
+
+  private evict(current: number): void {
+    for (const [index, image] of this.images) {
+      if (index !== 0 && Math.abs(index - current) > 5) {
+        image.src = '';
+        this.images.delete(index);
       }
     }
   }
 
-  /** Sheet index containing a flythrough frame, or null if out of range. */
-  sheetIndexOf(flyIndex: number): number | null {
-    const m = this.manifest?.[this.variant];
-    if (!m || flyIndex < 0 || flyIndex >= m.total) return null;
-    for (let i = 0; i < m.sheets.length; i++) {
-      const info = m.sheets[i];
-      if (flyIndex >= info.start && flyIndex < info.start + info.count) return i;
-    }
-    return null;
-  }
-
-  /** Synchronous slice for a flythrough frame index (0-based into the sheet set). */
-  getSlice(flyIndex: number): Slice | null {
-    const m = this.manifest?.[this.variant];
-    if (!m || flyIndex < 0 || flyIndex >= m.total) return null;
-    let sheet = 0;
-    for (let i = 0; i < m.sheets.length; i++) {
-      const info = m.sheets[i];
-      if (flyIndex >= info.start && flyIndex < info.start + info.count) {
-        sheet = i;
-        break;
-      }
-    }
-    const info = m.sheets[sheet];
-    const local = flyIndex - info.start;
-    const col = local % m.cols;
-    const row = Math.floor(local / m.cols);
-    const img = this.sheetImgs.get(sheet);
-    if (!img) {
-      this.ensureSheet(sheet);
-      this.ensureSheet(sheet + 1);
+  getSlice(frameIndex: number): Slice | null {
+    if (frameIndex < 0 || frameIndex >= this.flyTotal || !this.manifest) return null;
+    const image = this.images.get(frameIndex);
+    if (!image) {
+      void this.ensureFrame(frameIndex)?.catch(() => {});
       return null;
     }
-    this.lastServed = sheet;
-    this.ensureSheet(sheet + 1);
-    this.evict(sheet);
-    return { img, sx: col * m.cellW, sy: row * m.cellH, sw: m.cellW, sh: m.cellH };
+    for (let offset = -2; offset <= 4; offset++) {
+      if (offset !== 0) void this.ensureFrame(frameIndex + offset)?.catch(() => {});
+    }
+    this.evict(frameIndex);
+    return { img: image, sx: 0, sy: 0, sw: this.manifest.width, sh: this.manifest.height };
   }
 }
 
-export const sheetStore = new SheetStore();
+export const frameStore = new FrameStore();
 
-export function drawCoverSlice(
+export function drawFrameSlice(
   ctx: CanvasRenderingContext2D,
   canvas: HTMLCanvasElement,
   slice: Slice,
+  containInUpperArea = false,
 ): void {
   const cw = canvas.width;
   const ch = canvas.height;
   if (!cw || !ch) return;
-  const k = Math.max(cw / slice.sw, ch / slice.sh);
-  const dw = slice.sw * k;
-  const dh = slice.sh * k;
-  ctx.drawImage(slice.img, slice.sx, slice.sy, slice.sw, slice.sh, (cw - dw) / 2, (ch - dh) / 2, dw, dh);
+  ctx.fillStyle = containInUpperArea ? '#302923' : '#0a0a0b';
+  ctx.fillRect(0, 0, cw, ch);
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+  const imageAreaHeight = containInUpperArea ? ch * 0.58 : ch;
+  const scale = containInUpperArea
+    ? Math.min(cw / slice.sw, imageAreaHeight / slice.sh)
+    : Math.max(cw / slice.sw, ch / slice.sh);
+  const width = slice.sw * scale;
+  const height = slice.sh * scale;
+  ctx.drawImage(slice.img, slice.sx, slice.sy, slice.sw, slice.sh,
+    (cw - width) / 2, (imageAreaHeight - height) / 2, width, height);
 }

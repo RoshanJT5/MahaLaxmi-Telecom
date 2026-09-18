@@ -33,6 +33,7 @@ export function InfiniteSlider({
     let controls: ReturnType<typeof animate> | undefined;
 
     const size = direction === 'horizontal' ? width : height;
+    if (size <= 0) return;
     const contentSize = size + gap;
     const from = reverse ? -contentSize / 2 : 0;
     const to   = reverse ? 0 : -contentSize / 2;
@@ -53,13 +54,10 @@ export function InfiniteSlider({
         repeat: Infinity,
         repeatType: 'loop',
         repeatDelay: 0,
-        onRepeat: () => {
-          translation.set(from);
-        },
       });
     }
 
-    return controls?.stop;
+    return () => controls?.stop();
   }, [key, translation, currentDuration, width, height, gap, isTransitioning, direction, reverse]);
 
   const hoverProps = durationOnHover

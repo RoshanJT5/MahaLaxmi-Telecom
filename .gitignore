@@ -9,6 +9,7 @@
 # Next.js build and cache outputs
 /.next/
 /out/
+*.tsbuildinfo
 
 # Production build
 /build
@@ -19,7 +20,12 @@ yarn-debug.log*
 yarn-error.log*
 
 # Local environment variables
-.env*.local
+.env*
+!.env.example
+
+# Scroll source and intermediate exports (the site uses the WebP frames)
+/JM Scrolling video.mp4
+/public/page-section2/*.zip
 
 # OS files
 .DS_Store

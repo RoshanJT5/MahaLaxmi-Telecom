@@ -51,6 +51,7 @@ const socialLinks = [
 
 export default function SiteShell({ children, transparentOnTop = false }: SiteShellProps) {
   const [hasScrolled, setHasScrolled] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     if (!transparentOnTop) {
@@ -64,10 +65,33 @@ export default function SiteShell({ children, transparentOnTop = false }: SiteSh
     return () => window.removeEventListener('scroll', updateScrollState);
   }, [transparentOnTop]);
 
+  useEffect(() => {
+    if (!menuOpen) return;
+
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setMenuOpen(false);
+    };
+    const mobileQuery = window.matchMedia('(max-width: 860px)');
+    const closeOnDesktop = () => {
+      if (!mobileQuery.matches) setMenuOpen(false);
+    };
+    const previousOverflow = document.body.style.overflowY;
+    document.body.style.overflowY = 'hidden';
+
+    window.addEventListener('keydown', closeOnEscape);
+    mobileQuery.addEventListener('change', closeOnDesktop);
+    return () => {
+      document.body.style.overflowY = previousOverflow;
+      window.removeEventListener('keydown', closeOnEscape);
+      mobileQuery.removeEventListener('change', closeOnDesktop);
+    };
+  }, [menuOpen]);
+
   const headerClassName = [
     'site-top-header',
     transparentOnTop ? 'navbar-transparent' : '',
     hasScrolled ? 'navbar-scrolled' : '',
+    menuOpen ? 'menu-open' : '',
   ].filter(Boolean).join(' ');
 
   return (
@@ -85,12 +109,27 @@ export default function SiteShell({ children, transparentOnTop = false }: SiteSh
           </a>
 
           <nav className="main-nav" id="main-nav" aria-label="Main navigation">
-            <ul className="nav-list" id="nav-list">
+            <button
+              type="button"
+              className={`nav-toggle${menuOpen ? ' open' : ''}`}
+              aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+              aria-controls="nav-list"
+              aria-expanded={menuOpen}
+              onClick={() => setMenuOpen((open) => !open)}
+            >
+              <span className="nav-toggle-bar" aria-hidden="true" />
+              <span className="nav-toggle-bar" aria-hidden="true" />
+              <span className="nav-toggle-bar" aria-hidden="true" />
+            </button>
+            <ul className={`nav-list${menuOpen ? ' nav-open' : ''}`} id="nav-list">
               {navigation.map((entry) => (
                 <li className="nav-item" key={entry.href}>
-                  <a href={entry.href} className="nav-link">{entry.label}</a>
+                  <a href={entry.href} className="nav-link" onClick={() => setMenuOpen(false)}>{entry.label}</a>
                 </li>
               ))}
+              <li className="nav-cta-item">
+                <a href="/franchise" className="nav-cta-link" onClick={() => setMenuOpen(false)}>Enquiry</a>
+              </li>
             </ul>
           </nav>
 

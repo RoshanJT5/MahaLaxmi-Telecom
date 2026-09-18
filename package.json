@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "build:sheets": "node scripts/build-sheets.mjs"
+    "build:scroll": "node scripts/build-scroll-frames.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.8",

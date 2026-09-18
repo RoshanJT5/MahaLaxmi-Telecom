@@ -1,13 +1,13 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import SiteShell from '@/components/SiteShell';
 import { InfiniteSlider } from '@/components/InfiniteSlider';
 import ScrollFlythrough from '@/components/ScrollFlythrough';
 import { Typewriter } from '@/components/ui/typewriter-text';
 import LoadingScreen from '@/components/ui/LoadingScreen';
-import { sheetStore, detectVariant, preloadLogo } from '@/lib/asset-loader';
+import { frameStore, detectVariant, preloadLogo, ZERO_URL } from '@/lib/asset-loader';
 import styles from './page.module.css';
 
 const heroImages = [
@@ -21,8 +21,8 @@ const heroImages = [
 const unsplash = (id: string) => `https://images.unsplash.com/photo-${id}?w=600&q=70&auto=format&fit=crop`;
 
 export default function Home() {
-  // Production gate: the landing page reveals only after the logo, the 6
-  // frame spritesheets and the hero imagery are fully downloaded + cached.
+  // Reveal after the opening full-HD frames and hero imagery are ready.
+  // The rest of the sequence downloads in the background.
   const [booted, setBooted] = useState(false);
   const [loadProgress, setLoadProgress] = useState(0);
   const [revealed, setRevealed] = useState(false);
@@ -34,7 +34,7 @@ export default function Home() {
       if (cancelled) return;
       setBooted(true);
       try {
-        await sheetStore.ensure(detectVariant(), (f) => {
+        await frameStore.ensure(detectVariant(), (f) => {
           if (!cancelled) setLoadProgress(Math.round(f * 100));
         });
       } catch {
@@ -162,11 +162,6 @@ export default function Home() {
 
       <section id="who-we-are" className={styles.aboutSection}>
         <div className={styles.aboutContainer}>
-          <div className={styles.aboutMedia} id="about-zero-frame">
-            {/* Zeroth frame — ScrollFlythrough takeover starts from this same asset, then grows to fullscreen over frames 1-5 */}
-            <img src="/store_img.png" alt="Jagyasi Mobiles storefront powered by Mahalaxmi Telecom" />
-          </div>
-
           <div className={styles.aboutCopy}>
             <p className={styles.aboutEyebrow}>Who We Are</p>
             <h2 className={styles.aboutTitle}>A physical-first retail chain for a digital lifestyle.</h2>
@@ -178,6 +173,11 @@ export default function Home() {
               <div className={styles.aboutHighlight}><h3>Distribution-grade sourcing</h3><p>Two decades of brand relationships behind every shelf.</p></div>
               <div className={styles.aboutHighlight}><h3>Four brands, one standard</h3><p>Consistent quality and service across every store format.</p></div>
             </div>
+          </div>
+
+          <div className={styles.aboutMedia} id="about-zero-frame">
+            {/* Desktop grows from this still; stacked layouts use the flythrough's first frame. */}
+            <img src={ZERO_URL} alt="Jagyasi Mobiles storefront powered by Mahalaxmi Telecom" />
           </div>
         </div>
         <ScrollFlythrough takeover />
@@ -244,6 +244,7 @@ const outletBrands = [
 ];
 
 const OUTLET_AUTO_PLAY = 3200;
+const OUTLET_TOUCH_PAUSE = 10_000;
 const OUTLET_ITEM_HEIGHT = 68;
 
 function wrapIndex(min: number, max: number, v: number) {
@@ -254,18 +255,51 @@ function wrapIndex(min: number, max: number, v: number) {
 function StoreOutletBrandsSection() {
   const [step, setStep] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+  const [isTouchLayout, setIsTouchLayout] = useState(false);
+  const [isTouchPaused, setIsTouchPaused] = useState(false);
+  const touchPauseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const count = outletBrands.length;
   const currentIndex = ((step % count) + count) % count;
 
   const nextStep = useCallback(() => setStep((s) => s + 1), []);
 
   useEffect(() => {
-    if (isPaused) return;
+    const media = window.matchMedia('(max-width: 1100px)');
+    const updateLayout = () => {
+      setIsTouchLayout(media.matches);
+      if (media.matches) setIsPaused(false);
+      if (!media.matches) {
+        if (touchPauseTimer.current) clearTimeout(touchPauseTimer.current);
+        touchPauseTimer.current = null;
+        setIsTouchPaused(false);
+      }
+    };
+    updateLayout();
+    media.addEventListener('change', updateLayout);
+    return () => {
+      media.removeEventListener('change', updateLayout);
+      if (touchPauseTimer.current) clearTimeout(touchPauseTimer.current);
+    };
+  }, []);
+
+  const pauseForTouch = useCallback(() => {
+    if (!window.matchMedia('(max-width: 1100px)').matches) return;
+    setIsTouchPaused(true);
+    if (touchPauseTimer.current) clearTimeout(touchPauseTimer.current);
+    touchPauseTimer.current = setTimeout(() => {
+      touchPauseTimer.current = null;
+      setIsTouchPaused(false);
+    }, OUTLET_TOUCH_PAUSE);
+  }, []);
+
+  useEffect(() => {
+    if (isPaused || isTouchPaused) return;
     const id = setInterval(nextStep, OUTLET_AUTO_PLAY);
     return () => clearInterval(id);
-  }, [nextStep, isPaused]);
+  }, [nextStep, isPaused, isTouchPaused]);
 
   const handleChipClick = (index: number) => {
+    pauseForTouch();
     const diff = (index - currentIndex + count) % count;
     if (diff > 0) setStep((s) => s + diff);
   };
@@ -322,8 +356,9 @@ function StoreOutletBrandsSection() {
                   >
                     <button
                       onClick={() => handleChipClick(index)}
-                      onMouseEnter={() => setIsPaused(true)}
-                      onMouseLeave={() => setIsPaused(false)}
+                      onPointerDown={pauseForTouch}
+                      onMouseEnter={() => { if (!isTouchLayout) setIsPaused(true); }}
+                      onMouseLeave={() => { if (!isTouchLayout) setIsPaused(false); }}
                       aria-current={isActive ? 'true' : undefined}
                       className={`${styles.outletChip} ${isActive ? styles.outletChipActive : styles.outletChipIdle}`}
                     >
@@ -361,12 +396,28 @@ function StoreOutletBrandsSection() {
                     }}
                     style={{ pointerEvents: isActive ? 'auto' : 'none' }}
                     transition={{ type: 'spring', stiffness: 260, damping: 25, mass: 0.8 }}
+                    drag={isTouchLayout && isActive ? 'x' : false}
+                    dragConstraints={{ left: 0, right: 0 }}
+                    dragElastic={0.3}
+                    dragMomentum={false}
+                    onPointerDown={pauseForTouch}
+                    onPointerMove={(event) => { if (event.buttons) pauseForTouch(); }}
+                    onPointerUp={pauseForTouch}
+                    onPointerCancel={pauseForTouch}
+                    onDragEnd={(_, info) => {
+                      pauseForTouch();
+                      if (Math.abs(info.offset.x) > 45 || Math.abs(info.velocity.x) > 400) {
+                        const direction = Math.abs(info.offset.x) > 45 ? info.offset.x : info.velocity.x;
+                        setStep((s) => s + (direction < 0 ? 1 : -1));
+                      }
+                    }}
                     className={styles.outletCard}
                   >
-                    <img src={brand.image} alt="" aria-hidden="true" className={styles.outletCardBackdrop} />
+                    <img src={brand.image} alt="" aria-hidden="true" draggable={false} className={styles.outletCardBackdrop} />
                     <img
                       src={brand.image}
                       alt={brand.name}
+                      draggable={false}
                       className={`${styles.outletCardImg} ${isActive ? styles.outletCardImgActive : styles.outletCardImgDim}`}
                     />
 

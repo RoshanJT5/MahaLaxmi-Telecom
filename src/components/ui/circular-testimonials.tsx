@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import "./CircularTestimonials.css";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -68,13 +68,57 @@ export function CircularTestimonials({
       ];
   const n = data.length;
   const [index, setIndex] = useState(0);
+  const [isTouchLayout, setIsTouchLayout] = useState(false);
+  const [isTouchPaused, setIsTouchPaused] = useState(false);
+  const pauseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const touchStart = useRef<{ pointerId: number; x: number; y: number } | null>(null);
+
   useEffect(() => {
-    if (!autoplay) return;
+    const media = window.matchMedia("(max-width: 1100px)");
+    const updateLayout = () => {
+      setIsTouchLayout(media.matches);
+      if (!media.matches) {
+        if (pauseTimer.current) clearTimeout(pauseTimer.current);
+        pauseTimer.current = null;
+        touchStart.current = null;
+        setIsTouchPaused(false);
+      }
+    };
+    updateLayout();
+    media.addEventListener("change", updateLayout);
+    return () => {
+      media.removeEventListener("change", updateLayout);
+      if (pauseTimer.current) clearTimeout(pauseTimer.current);
+    };
+  }, []);
+
+  const pauseForTouch = useCallback(() => {
+    if (!window.matchMedia("(max-width: 1100px)").matches) return;
+    setIsTouchPaused(true);
+    if (pauseTimer.current) clearTimeout(pauseTimer.current);
+    pauseTimer.current = setTimeout(() => {
+      pauseTimer.current = null;
+      setIsTouchPaused(false);
+    }, 10_000);
+  }, []);
+
+  useEffect(() => {
+    if (!autoplay || isTouchPaused) return;
     const id = setInterval(() => setIndex((p) => (p + 1) % n), 7000);
     return () => clearInterval(id);
-  }, [autoplay, n]);
-  const prev = () => setIndex((p) => (p - 1 + n) % n);
-  const next = () => setIndex((p) => (p + 1) % n);
+  }, [autoplay, n, isTouchPaused]);
+  const prev = () => { pauseForTouch(); setIndex((p) => (p - 1 + n) % n); };
+  const next = () => { pauseForTouch(); setIndex((p) => (p + 1) % n); };
+
+  const handlePointerUp = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!isTouchLayout || touchStart.current?.pointerId !== event.pointerId) return;
+    const distanceX = event.clientX - touchStart.current.x;
+    const distanceY = event.clientY - touchStart.current.y;
+    touchStart.current = null;
+    pauseForTouch();
+    if (Math.abs(distanceX) < 38 || Math.abs(distanceX) < Math.abs(distanceY) * 1.2) return;
+    setIndex((current) => (current + (distanceX < 0 ? 1 : -1) + n) % n);
+  };
 
   // stack configs desktop
   const stack = data
@@ -85,52 +129,13 @@ export function CircularTestimonials({
     .sort((a, b) => a.depth - b.depth);
 
   // offsets for depths 0..3
-  const getStyle = (depth: number, isMobile: boolean) => {
-    if (isMobile) {
+  const getStyle = (depth: number, isCompact: boolean) => {
+    if (isCompact) {
       return [
-        // 0 = ACTIVE / FRONT
-        {
-          left: "8%",
-          top: "8%",
-          w: "84%",
-          h: "84%",
-          z: 10,
-          scale: 1,
-          opacity: 1,
-        },
-
-        // 1 = RIGHT
-        {
-          left: "25%",
-          top: "3%",
-          w: "84%",
-          h: "84%",
-          z: 7,
-          scale: 0.9,
-          opacity: 1,
-        },
-
-        // 2 = LEFT
-        {
-          left: "-8%",
-          top: "3%",
-          w: "84%",
-          h: "84%",
-          z: 6,
-          scale: 0.9,
-          opacity: 1,
-        },
-
-        // 3 = TOP / BACK
-        {
-          left: "8%",
-          top: "-8%",
-          w: "84%",
-          h: "84%",
-          z: 5,
-          scale: 0.84,
-          opacity: 1,
-        },
+        { left: "0%", top: "0%", w: "100%", h: "100%", z: 10, scale: 1, opacity: 1, rotate: 0 },
+        { left: "105%", top: "0%", w: "100%", h: "100%", z: 7, scale: 1, opacity: 0, rotate: 0 },
+        { left: "-105%", top: "0%", w: "100%", h: "100%", z: 5, scale: 1, opacity: 0, rotate: 0 },
+        { left: "-105%", top: "0%", w: "100%", h: "100%", z: 6, scale: 1, opacity: 0, rotate: 0 },
       ][depth];
     }
 
@@ -196,9 +201,22 @@ export function CircularTestimonials({
   return (
     <section className="testimonial-section">
       <div className="testimonial-wrapper">
-        <div className="testimonial-images">
+        <div
+          className="testimonial-images"
+          onPointerDown={(event) => {
+            if (!isTouchLayout) return;
+            touchStart.current = { pointerId: event.pointerId, x: event.clientX, y: event.clientY };
+            event.currentTarget.setPointerCapture(event.pointerId);
+            pauseForTouch();
+          }}
+          onPointerMove={(event) => {
+            if (touchStart.current?.pointerId === event.pointerId) pauseForTouch();
+          }}
+          onPointerUp={handlePointerUp}
+          onPointerCancel={() => { touchStart.current = null; pauseForTouch(); }}
+        >
           {stack.map(({ t, depth }) => {
-            const s: any = getStyle(depth, false);
+            const s = getStyle(depth, isTouchLayout)!;
             const isFront = depth === 0;
             return (
               <motion.div
@@ -211,10 +229,10 @@ export function CircularTestimonials({
                       : "testimonial-stack-image"
                 }
                 initial={false}
-                animate={{ left: typeof s.left === "number" ? s.left : s.left, top: typeof s.top === "number" ? s.top : s.top, scale: s.scale, opacity: s.opacity, zIndex: s.z, rotate: s.rotate, }} transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }} style={{
+                animate={{ left: s.left, top: s.top, scale: s.scale, opacity: s.opacity, zIndex: s.z, rotate: s.rotate, }} transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }} style={{
                   position: "absolute",
-                  width: typeof s.w === "number" ? s.w : s.w,
-                  height: typeof s.h === "number" ? s.h : s.h,
+                  width: s.w,
+                  height: s.h,
                   borderRadius: depth === 3 ? 24 : 28,
                   overflow: "hidden",
                   boxShadow: isFront
