@@ -7,20 +7,51 @@ import styles from './contact.module.css';
 export default function ContactPage() {
   const [form, setForm] = useState({ name: '', phone: '', email: '', city: '', message: '' });
   const [consent, setConsent] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   const set = (key: keyof typeof form) => (
     event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     setForm((current) => ({ ...current, [key]: event.target.value }));
     setSubmitted(false);
+    setErrorMessage('');
   };
 
-  const handleSubmit = (event: React.FormEvent) => {
+  const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!consent) return;
-    setSubmitted(true);
-    setForm({ name: '', phone: '', email: '', city: '', message: '' });
+    if (!consent || submitting) return;
+
+    setSubmitting(true);
+    setErrorMessage('');
+
+    const scriptUrl =
+      process.env.NEXT_PUBLIC_GOOGLE_SCRIPT_URL ||
+      'https://script.google.com/macros/s/AKfycbw1Kyb0482OkgNExEaiaSb5U-TseW8JUqVF29Wob2dYLZeVqnd2lcuCG96BkLYFoM2YpA/exec';
+
+    try {
+      // Google Apps Script requires text/plain or no-cors with fetch to avoid preflight CORS redirection blocks
+      await fetch(scriptUrl, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: {
+          'Content-Type': 'text/plain;charset=utf-8',
+        },
+        body: JSON.stringify({
+          ...form,
+          timestamp: new Date().toISOString(),
+        }),
+      });
+
+      setSubmitted(true);
+      setForm({ name: '', phone: '', email: '', city: '', message: '' });
+      setConsent(false);
+    } catch {
+      setErrorMessage('Unable to submit your enquiry at this moment. Please try again or reach out directly via phone or email.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -99,14 +130,17 @@ export default function ContactPage() {
                   </label>
 
                   <div className={styles.submitRow}>
-                    <button type="submit" disabled={!consent} className={styles.submitBtn}>
-                      Submit Enquiry <span aria-hidden="true">→</span>
+                    <button type="submit" disabled={!consent || submitting} className={styles.submitBtn}>
+                      {submitting ? 'Submitting...' : 'Submit Enquiry'} <span aria-hidden="true">→</span>
                     </button>
-                    {!consent && !submitted && (
+                    {!consent && !submitted && !submitting && (
                       <p className={styles.hint}>Please accept the Terms &amp; Privacy Policy to continue.</p>
                     )}
                     {submitted && (
-                      <p className={styles.success} role="status">Thank you — our franchise team will get back to you shortly.</p>
+                      <p className={styles.success} role="status">Thank you — your enquiry has been received. Our franchise team will get back to you shortly.</p>
+                    )}
+                    {errorMessage && (
+                      <p className={styles.error} role="alert">{errorMessage}</p>
                     )}
                   </div>
                 </form>

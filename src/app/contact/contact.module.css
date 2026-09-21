@@ -295,6 +295,16 @@ a.cellValue:hover {
   font-size: 14px;
   font-weight: 600;
 }
+.error {
+  margin: 0;
+  padding: 14px 20px;
+  border: 1px solid #e53e3e;
+  border-radius: 8px;
+  background: rgba(229, 62, 62, 0.08);
+  color: #c53030;
+  font-size: 14px;
+  font-weight: 600;
+}
 @media (max-width: 1024px) {
   .reachLayout {
     grid-template-columns: 1fr;
