@@ -112,9 +112,9 @@ class FrameStore {
       : { width: 1920, height: 1080 };
   }
 
-  ensure(_variant: Variant, onProgress: (fraction: number) => void = () => {}): Promise<void> {
+  ensure(variant: Variant = 'desktop', onProgress: (fraction: number) => void = () => {}): Promise<void> {
     if (!this.readyPromise) {
-      this.readyPromise = this.start(onProgress).catch((error) => {
+      this.readyPromise = this.start(variant, onProgress).catch((error) => {
         this.readyPromise = null;
         throw error;
       });
@@ -122,8 +122,23 @@ class FrameStore {
     return this.readyPromise;
   }
 
-  private async start(onProgress: (fraction: number) => void): Promise<void> {
+  private async start(variant: Variant, onProgress: (fraction: number) => void): Promise<void> {
     this.cache = await getCache();
+
+    if (variant === 'mobile') {
+      try {
+        const [zeroBytes] = await Promise.all([
+          fetchBytes(ZERO_URL, this.cache),
+          ...HERO_URLS.map((url) => fetchBytes(url, this.cache).catch(() => null)),
+        ]);
+        if (zeroBytes) this.zeroImg = await decodeBlob(zeroBytes);
+      } catch {
+        /* non-fatal */
+      }
+      onProgress(1);
+      return;
+    }
+
     const response = await fetch(MANIFEST_URL);
     if (!response.ok) throw new Error('Flythrough manifest unavailable');
     this.manifest = (await response.json()) as FrameManifest;

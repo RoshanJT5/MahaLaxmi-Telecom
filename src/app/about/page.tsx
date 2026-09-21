@@ -109,22 +109,22 @@ export default function AboutPage() {
               src="/page-section1/store-detail.jpg"
               alt="Inside a Mahalaxmi Telecom retail outlet"
               className={styles.storyImage}
-              initial={{ opacity: 0, x: -72, scale: 0.98 }}
-              whileInView={{ opacity: 1, x: 0, scale: 1 }}
-              viewport={{ once: true, amount: 0.35 }}
-              transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+              initial={{ opacity: 0, y: 32 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.2 }}
+              transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
             />
 
             <motion.div
               className={styles.storyCopy}
-              initial={{ opacity: 0, x: 72 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true, amount: 0.35 }}
-              transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1], delay: 0.14 }}
+              initial={{ opacity: 0, y: 32 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.2 }}
+              transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1], delay: 0.12 }}
             >
               <p className={styles.storyEyebrow}>Our Retail Philosophy</p>
               <h2 className={styles.storyTitle}>
-                Retail you can walk<br />into, touch and trust.
+                Retail you can walk<br className={styles.desktopOnly} />into, touch and trust.
               </h2>
               <p className={styles.storyBody}>
                 Our stores give customers something an online listing never can — the chance

@@ -32,17 +32,152 @@ const BEATS = [  { eyebrow: 'From the street', title: 'It starts outside.', body
 export default function ScrollFlythrough({ embedded = false, takeover = false }: { embedded?: boolean; takeover?: boolean }) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const stickyRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const copyRef = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(0);
   const [loaded, setLoaded] = useState(0);
   const [ready, setReady] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
 
   useEffect(() => {
     const wrap = wrapRef.current;
+    if (!wrap) return;
+
+    // --- MOBILE SCROLLING ENGINE (COPIED DIRECTLY FROM GPT BRANCH) ---
+    if (isMobile) {
+      const video = videoRef.current;
+      if (!video) return;
+
+      const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
+      if (motion.matches) {
+        setReady(true);
+        return;
+      }
+
+      let near = false;
+      let metadataReady = false;
+      let target = 0;
+      let raf = 0;
+      let lastBeat = -1;
+      let primed = false;
+
+      // The decoder handles one seek at a time. Discard intermediate scroll
+      // positions and seek only to the newest target when it becomes free.
+      const seek = () => {
+        raf = 0;
+        if (!near || !metadataReady || video.seeking || !Number.isFinite(video.duration)) return;
+        const time = Math.min(video.duration - 0.05, Math.max(0, target * video.duration));
+        if (Math.abs(video.currentTime - time) > 1 / 30) video.currentTime = time;
+      };
+      const scheduleSeek = () => {
+        if (!raf) raf = requestAnimationFrame(seek);
+      };
+      const onScroll = () => {
+        const bounds = wrap.getBoundingClientRect();
+        const distance = Math.max(1, bounds.height - window.innerHeight);
+        target = Math.min(1, Math.max(0, -bounds.top / distance));
+        const beat = Math.min(BEATS.length - 1, Math.floor(target * BEATS.length));
+        if (beat !== lastBeat) {
+          lastBeat = beat;
+          setActive(beat);
+        }
+        if (copyRef.current) {
+          copyRef.current.style.opacity = '1';
+          copyRef.current.style.transform = 'translateY(0px)';
+        }
+        scheduleSeek();
+      };
+      const loadVideo = () => {
+        near = true;
+        video.preload = 'auto';
+        video.src = '/page-section2/jm-scroll-mobile.mp4';
+        video.load();
+        setLoaded(100);
+        setReady(true);
+        onScroll();
+      };
+      const onMetadata = () => {
+        metadataReady = true;
+        setLoaded(100);
+        setReady(true);
+        scheduleSeek();
+      };
+      const onFrame = () => {
+        setReady(true);
+        setLoaded(100);
+      };
+      const onSeeked = () => {
+        onFrame();
+        scheduleSeek();
+      };
+      const primeOnTouch = () => {
+        if (!near || primed) return;
+        primed = true;
+        void video.play().then(() => {
+          video.pause();
+          scheduleSeek();
+        }).catch(() => {
+          primed = false;
+        });
+      };
+      const observer = new IntersectionObserver(([entry]) => {
+        if (entry.isIntersecting && !near) loadVideo();
+      }, { rootMargin: '100% 0px' });
+
+      video.addEventListener('loadedmetadata', onMetadata);
+      video.addEventListener('loadeddata', onFrame);
+      video.addEventListener('seeked', onSeeked);
+      observer.observe(wrap);
+      window.addEventListener('scroll', onScroll, { passive: true });
+      wrap.addEventListener('touchstart', primeOnTouch, { passive: true });
+
+      setLoaded(100);
+      setReady(true);
+      if (stageRef.current && stickyRef.current) {
+        const stage = stageRef.current;
+        stage.style.opacity = '1';
+        stage.style.left = '0px';
+        stage.style.top = '0px';
+        stage.style.width = '100%';
+        stage.style.height = '100%';
+        stage.style.borderRadius = '0px';
+        stage.style.pointerEvents = 'auto';
+        if (copyRef.current) {
+          copyRef.current.style.opacity = '1';
+          copyRef.current.style.transform = 'translateY(0px)';
+          copyRef.current.style.pointerEvents = 'auto';
+        }
+      }
+
+      if (wrap.getBoundingClientRect().top < window.innerHeight * 2) {
+        loadVideo();
+      }
+      onScroll();
+
+      return () => {
+        observer.disconnect();
+        window.removeEventListener('scroll', onScroll);
+        wrap.removeEventListener('touchstart', primeOnTouch);
+        video.removeEventListener('loadedmetadata', onMetadata);
+        video.removeEventListener('loadeddata', onFrame);
+        video.removeEventListener('seeked', onSeeked);
+        cancelAnimationFrame(raf);
+        video.pause();
+      };
+    }
+
+    // --- DESKTOP CANVAS FLYTHROUGH ENGINE (ORIGINAL) ---
     const canvas = canvasRef.current;
-    if (!wrap || !canvas) return;
+    if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
@@ -355,7 +490,7 @@ export default function ScrollFlythrough({ embedded = false, takeover = false }:
       window.removeEventListener('resize', onResize);
       setSourceHidden(false);
     };
-  }, [embedded, takeover]);
+  }, [embedded, takeover, isMobile]);
 
   if (takeover) {
     return (
@@ -364,9 +499,20 @@ export default function ScrollFlythrough({ embedded = false, takeover = false }:
           {/* Desktop grows from #about-zero-frame; stacked layouts use this
               opening frame as the sole storefront image. */}
           <div ref={stageRef} className={styles.morphStage}>
-          <canvas ref={canvasRef} className={ready ? styles.canvasOn : styles.canvas} aria-label="Scroll-driven flythrough of Jagyasi Mobiles store" />
+          {isMobile ? (
+            <video
+              ref={videoRef}
+              className={styles.mobileVideo}
+              muted
+              playsInline
+              preload="none"
+              aria-hidden="true"
+            />
+          ) : (
+            <canvas ref={canvasRef} className={ready ? styles.canvasOn : styles.canvas} aria-label="Scroll-driven flythrough of Jagyasi Mobiles store" />
+          )}
           {/* Zeroth frame — same asset as the image div above, so frame 0 matches exactly */}
-          <img src={ZERO_SRC} alt="" className={styles.poster} aria-hidden="true" style={{ opacity: ready ? 0 : 1, transition: 'opacity .7s ease' }} />
+          <img src={isMobile ? '/page-section2/poster-mobile.jpg' : ZERO_SRC} alt="" className={styles.poster} aria-hidden="true" style={{ opacity: ready ? 0 : 1, transition: 'opacity .7s ease' }} />
           <div className={styles.scrim} aria-hidden="true" />
           <div className={styles.progress} aria-hidden="true">
             <span style={{ transform: `scaleX(${loaded / 100})` }} />
@@ -376,7 +522,7 @@ export default function ScrollFlythrough({ embedded = false, takeover = false }:
               <span key={i} className={i <= active ? styles.dotOn : styles.dot} />
             ))}
           </div>
-          <div ref={copyRef} className={styles.copy} style={{ opacity: 0 }}>
+          <div ref={copyRef} className={styles.copy} style={isMobile ? { opacity: 1, pointerEvents: 'auto' } : { opacity: 0 }}>
             <p className={styles.kicker}>Keep scrolling — walking you in · {loaded}% ready</p>
             {BEATS.map((b, i) => (
               <div key={b.title} className={i === active ? styles.beatOn : styles.beat}>
@@ -408,8 +554,12 @@ export default function ScrollFlythrough({ embedded = false, takeover = false }:
   if (embedded) {
     return (
       <div ref={wrapRef} className={styles.embedWrap}>
-        <canvas ref={canvasRef} className={styles.embedCanvas} aria-label="Scroll-driven flythrough of Jagyasi Mobiles store" />
-        {!ready && <img src={ZERO_SRC} alt="" className={styles.embedPoster} aria-hidden="true" />}
+        {isMobile ? (
+          <video ref={videoRef} className={styles.mobileVideo} muted playsInline preload="none" aria-hidden="true" />
+        ) : (
+          <canvas ref={canvasRef} className={styles.embedCanvas} aria-label="Scroll-driven flythrough of Jagyasi Mobiles store" />
+        )}
+        {!ready && <img src={isMobile ? '/page-section2/poster-mobile.jpg' : ZERO_SRC} alt="" className={styles.embedPoster} aria-hidden="true" />}
       </div>
     );
   }
@@ -417,8 +567,12 @@ export default function ScrollFlythrough({ embedded = false, takeover = false }:
   return (
     <div ref={wrapRef} className={styles.wrap} id="flythrough">
       <div className={styles.sticky}>
-        <canvas ref={canvasRef} className={styles.canvas} aria-label="Scroll-driven flythrough of Jagyasi Mobiles store" />
-        {!ready && <img src={ZERO_SRC} alt="" className={styles.poster} aria-hidden="true" />}
+        {isMobile ? (
+          <video ref={videoRef} className={styles.mobileVideo} muted playsInline preload="none" aria-hidden="true" />
+        ) : (
+          <canvas ref={canvasRef} className={styles.canvas} aria-label="Scroll-driven flythrough of Jagyasi Mobiles store" />
+        )}
+        {!ready && <img src={isMobile ? '/page-section2/poster-mobile.jpg' : ZERO_SRC} alt="" className={styles.poster} aria-hidden="true" />}
         <div className={styles.scrim} aria-hidden="true" />
         <div className={styles.progress} aria-hidden="true">
           <span style={{ transform: `scaleX(${loaded / 100})` }} />
