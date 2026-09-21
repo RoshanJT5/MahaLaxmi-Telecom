@@ -28,7 +28,7 @@ export default function ContactPage() {
 
     const scriptUrl =
       process.env.NEXT_PUBLIC_GOOGLE_SCRIPT_URL ||
-      'https://script.google.com/macros/s/AKfycbw1Kyb0482OkgNExEaiaSb5U-TseW8JUqVF29Wob2dYLZeVqnd2lcuCG96BkLYFoM2YpA/exec';
+      'https://script.google.com/macros/s/AKfycbxf8X8r15VHtw46PONkqBRgATQ3im0ATCk6exkE6h3-ekZhbrfo-07-1m4kU7ocsfslpA/exec';
 
     try {
       // Google Apps Script requires text/plain or no-cors with fetch to avoid preflight CORS redirection blocks
