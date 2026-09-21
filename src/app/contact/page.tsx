@@ -125,12 +125,22 @@ export default function ContactPage() {
                   </div>
 
                   <label className={styles.consentBox}>
-                    <input type="checkbox" checked={consent} onChange={(event) => setConsent(event.target.checked)} />
+                    <input
+                      type="checkbox"
+                      checked={consent}
+                      onChange={(event) => setConsent(event.target.checked)}
+                      suppressHydrationWarning
+                    />
                     <span>I agree to the <a href="#" onClick={(event) => event.preventDefault()}>Terms &amp; Conditions</a> and <a href="#" onClick={(event) => event.preventDefault()}>Privacy Policy</a>, and I consent to Mahalaxmi Telecom Private Limited processing my personal data under the Digital Personal Data Protection Act, 2023 to respond to this enquiry.</span>
                   </label>
 
                   <div className={styles.submitRow}>
-                    <button type="submit" disabled={!consent || submitting} className={styles.submitBtn}>
+                    <button
+                      type="submit"
+                      disabled={!consent || submitting}
+                      className={styles.submitBtn}
+                      suppressHydrationWarning
+                    >
                       {submitting ? 'Submitting...' : 'Submit Enquiry'} <span aria-hidden="true">→</span>
                     </button>
                     {!consent && !submitted && !submitting && (

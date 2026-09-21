@@ -28,7 +28,7 @@
 .topTitle {
   margin: 0;
   font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(36px, 4.2vw, 52px);
+  font-size: clamp(40px, 5.5vw, 68px);
   font-weight: 400;
   letter-spacing: -1.6px;
   line-height: 1.05;
