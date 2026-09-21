@@ -3,6 +3,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 
+import { LOADING_LOGO_BASE64 } from './loading-logo-base64';
+
 interface LoadingScreenProps {
   /** 0-100 download progress driven by the asset preloader. */
   progress: number;
@@ -55,14 +57,15 @@ export default function LoadingScreen({ progress, onComplete }: LoadingScreenPro
           marginBottom: '44px',
         }}
       >
-        {/* Real Mahalaxmi Logo Image */}
+        {/* Instant Inlined Base64 Mahalaxmi Logo */}
         <div style={{ position: 'relative', width: '110px', height: '110px', flexShrink: 0 }}>
-          <Image
-            src="/mahalaxmi-logo.png"
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={LOADING_LOGO_BASE64}
             alt="Mahalaxmi Telecom Logo"
-            fill
-            priority
-            style={{ objectFit: 'contain' }}
+            width={110}
+            height={110}
+            style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
           />
         </div>
 

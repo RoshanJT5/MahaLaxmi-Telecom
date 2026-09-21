@@ -26,8 +26,18 @@ export default function Home() {
   const [booted, setBooted] = useState(false);
   const [loadProgress, setLoadProgress] = useState(0);
   const [revealed, setRevealed] = useState(false);
+  const [hasVisited, setHasVisited] = useState(false);
 
   useEffect(() => {
+    const alreadyLoaded = typeof window !== 'undefined' && sessionStorage.getItem('mahalaxmi_initial_loaded') === 'true';
+    if (alreadyLoaded) {
+      setHasVisited(true);
+      setBooted(true);
+      setRevealed(true);
+      frameStore.ensure(detectVariant()).catch(() => {});
+      return;
+    }
+
     let cancelled = false;
     (async () => {
       await preloadLogo();
@@ -48,11 +58,20 @@ export default function Home() {
     };
   }, []);
 
+  const handleLoadingComplete = useCallback(() => {
+    try {
+      sessionStorage.setItem('mahalaxmi_initial_loaded', 'true');
+    } catch {
+      /* ignore storage error */
+    }
+    setRevealed(true);
+  }, []);
+
   return (
     <>
-      {!booted && <div aria-hidden="true" style={{ position: 'fixed', inset: 0, zIndex: 9999, background: '#000' }} />}
-      {booted && !revealed && (
-        <LoadingScreen progress={loadProgress} onComplete={() => setRevealed(true)} />
+      {!booted && !hasVisited && <div aria-hidden="true" style={{ position: 'fixed', inset: 0, zIndex: 9999, background: '#000' }} />}
+      {booted && !revealed && !hasVisited && (
+        <LoadingScreen progress={loadProgress} onComplete={handleLoadingComplete} />
       )}
       <SiteShell transparentOnTop>
     <main id="main-content">
