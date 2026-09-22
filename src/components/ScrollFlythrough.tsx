@@ -22,12 +22,16 @@ const frameFloatFromP = (p: number, count: number) => {
   return GROW_FRAMES + ((c - GROW_SPLIT) / (1 - GROW_SPLIT)) * (count - 1 - GROW_FRAMES);
 };
 
-const BEATS = [  { eyebrow: 'From the street', title: 'It starts outside.', body: 'Jagyasi Mobiles by Mahalaxmi Telecom — evening lights on, doors open.', tags: ['Flagship Store', 'Nandurbar'] },
+const BEATS = [
+  { eyebrow: 'From the street', title: 'It starts outside.', body: 'Jagyasi Mobiles by Mahalaxmi Telecom — evening lights on, doors open.', tags: ['Flagship Store', 'Nandurbar'] },
   { eyebrow: 'Step closer', title: 'Glass doors, warm light.', body: 'Keep scrolling — the camera glides straight through the entrance.', tags: ['Physical-first'] },
   { eyebrow: 'Inside the showroom', title: 'Every screen, live.', body: 'Samsung, LG, Sony walls — test everything before you buy.', tags: ['Samsung', 'LG', 'Sony'] },
   { eyebrow: 'Take your time', title: 'Sit. Compare. Decide.', body: 'Lounge seating, honest advice, no rush — this is retail that breathes.', tags: ['Hands-on', 'No Targets'] },
   { eyebrow: 'Your turn', title: 'Come walk it for real.', body: 'Or bring this trusted format to your town as a franchise partner.', tags: [], cta: true },
 ];
+
+export type EngineMode = 'video' | 'frames';
+export type PacingMode = 'smooth' | '5fps' | '10fps';
 
 export default function ScrollFlythrough({ embedded = false, takeover = false }: { embedded?: boolean; takeover?: boolean }) {
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -36,10 +40,18 @@ export default function ScrollFlythrough({ embedded = false, takeover = false }:
   const stickyRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const copyRef = useRef<HTMLDivElement>(null);
+
   const [active, setActive] = useState(0);
   const [loaded, setLoaded] = useState(0);
   const [ready, setReady] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [engineMode, setEngineMode] = useState<EngineMode>('video');
+  const [pacingMode, setPacingMode] = useState<PacingMode>('smooth');
+
+  const pacingRef = useRef<PacingMode>(pacingMode);
+  useEffect(() => {
+    pacingRef.current = pacingMode;
+  }, [pacingMode]);
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
@@ -48,143 +60,320 @@ export default function ScrollFlythrough({ embedded = false, takeover = false }:
     return () => window.removeEventListener('resize', check);
   }, []);
 
+  // --- 1. VIDEO SCROLLING ENGINE (FOR BOTH DESKTOP & MOBILE) ---
   useEffect(() => {
+    if (engineMode !== 'video') return;
     const wrap = wrapRef.current;
-    if (!wrap) return;
+    const video = videoRef.current;
+    if (!wrap || !video) return;
 
-    // --- MOBILE SCROLLING ENGINE (COPIED DIRECTLY FROM GPT BRANCH) ---
-    if (isMobile) {
-      const video = videoRef.current;
-      if (!video) return;
+    const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const reduced = motion.matches;
+    let stacked = window.matchMedia('(max-width: 1100px)').matches;
 
-      const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
-      if (motion.matches) {
-        setReady(true);
-        return;
-      }
+    let near = video.readyState >= 1;
+    let metadataReady = video.readyState >= 1;
+    let target = 0;
+    let current = 0;
+    let raf = 0;
+    let lastBeat = -1;
+    let primed = false;
+    let placed = false;
+    let pendingTime: number | null = null;
 
-      let near = false;
-      let metadataReady = false;
-      let target = 0;
-      let raf = 0;
-      let lastBeat = -1;
-      let primed = false;
-
-      // The decoder handles one seek at a time. Discard intermediate scroll
-      // positions and seek only to the newest target when it becomes free.
-      const seek = () => {
-        raf = 0;
-        if (!near || !metadataReady || video.seeking || !Number.isFinite(video.duration)) return;
-        const time = Math.min(video.duration - 0.05, Math.max(0, target * video.duration));
-        if (Math.abs(video.currentTime - time) > 1 / 30) video.currentTime = time;
-      };
-      const scheduleSeek = () => {
-        if (!raf) raf = requestAnimationFrame(seek);
-      };
-      const onScroll = () => {
-        const bounds = wrap.getBoundingClientRect();
-        const distance = Math.max(1, bounds.height - window.innerHeight);
-        target = Math.min(1, Math.max(0, -bounds.top / distance));
-        const beat = Math.min(BEATS.length - 1, Math.floor(target * BEATS.length));
-        if (beat !== lastBeat) {
-          lastBeat = beat;
-          setActive(beat);
-        }
-        if (copyRef.current) {
-          copyRef.current.style.opacity = '1';
-          copyRef.current.style.transform = 'translateY(0px)';
-        }
-        scheduleSeek();
-      };
-      const loadVideo = () => {
-        near = true;
-        video.preload = 'auto';
-        video.src = '/page-section2/jm-scroll-mobile.mp4';
-        video.load();
-        setLoaded(100);
-        setReady(true);
-        onScroll();
-      };
-      const onMetadata = () => {
-        metadataReady = true;
-        setLoaded(100);
-        setReady(true);
-        scheduleSeek();
-      };
-      const onFrame = () => {
-        setReady(true);
-        setLoaded(100);
-      };
-      const onSeeked = () => {
-        onFrame();
-        scheduleSeek();
-      };
-      const primeOnTouch = () => {
-        if (!near || primed) return;
-        primed = true;
-        void video.play().then(() => {
-          video.pause();
-          scheduleSeek();
-        }).catch(() => {
-          primed = false;
-        });
-      };
-      const observer = new IntersectionObserver(([entry]) => {
-        if (entry.isIntersecting && !near) loadVideo();
-      }, { rootMargin: '100% 0px' });
-
-      video.addEventListener('loadedmetadata', onMetadata);
-      video.addEventListener('loadeddata', onFrame);
-      video.addEventListener('seeked', onSeeked);
-      observer.observe(wrap);
-      window.addEventListener('scroll', onScroll, { passive: true });
-      wrap.addEventListener('touchstart', primeOnTouch, { passive: true });
-
+    if (metadataReady) {
       setLoaded(100);
       setReady(true);
-      if (stageRef.current && stickyRef.current) {
-        const stage = stageRef.current;
+    }
+
+    type StartRect = { l: number; t: number; w: number; h: number; r: number };
+    let start: StartRect | null = null;
+    const getSource = () => document.querySelector<HTMLElement>('#about-zero-frame');
+    const captureStart = (): StartRect | null => {
+      const fallback = (): StartRect => {
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+        return { l: vw * 0.1, t: vh * 0.15, w: vw * 0.8, h: vh * 0.7, r: 28 };
+      };
+      const src = getSource();
+      if (src) {
+        const b = src.getBoundingClientRect();
+        if (b.width > 2 && b.height > 2 && b.top > -window.innerHeight && b.top < window.innerHeight) {
+          let r = 3;
+          try { r = parseFloat(getComputedStyle(src).borderRadius) || 3; } catch { /* noop */ }
+          start = { l: b.left, t: b.top, w: b.width, h: b.height, r };
+          return start;
+        }
+      }
+      start = fallback();
+      return start;
+    };
+
+    const placeWrap = () => {
+      if (placed || !takeover) return;
+      if (stacked) {
+        wrap.style.marginTop = '0px';
+        placed = true;
+        return;
+      }
+      const src = getSource();
+      if (!src) return;
+      if (wrap.getBoundingClientRect().top < window.innerHeight) return;
+      const gap = wrap.getBoundingClientRect().top - src.getBoundingClientRect().top;
+      const cur = parseFloat(getComputedStyle(wrap).marginTop) || 0;
+      const m = Math.max(0, gap - cur + window.innerHeight * 0.12);
+      wrap.style.marginTop = `${Math.round(-m)}px`;
+      placed = true;
+    };
+
+    const setSourceHidden = (hidden: boolean) => {
+      const src = getSource();
+      if (!src) return;
+      src.style.transition = 'opacity .25s linear';
+      src.style.opacity = hidden ? '0' : '1';
+    };
+
+    type Phase = 'before' | 'pinned' | 'after';
+    const getPhase = (): Phase => {
+      const rect = wrap.getBoundingClientRect();
+      if (rect.top > 0) return 'before';
+      if (rect.bottom >= window.innerHeight) return 'pinned';
+      return 'after';
+    };
+
+    const layoutStage = (p: number, phase: Phase) => {
+      const stage = stageRef.current;
+      const sticky = stickyRef.current;
+      if (!takeover || !stage || !sticky) return;
+      if (stacked) {
         stage.style.opacity = '1';
         stage.style.left = '0px';
         stage.style.top = '0px';
-        stage.style.width = '100%';
-        stage.style.height = '100%';
+        stage.style.width = `${(sticky.clientWidth || window.innerWidth).toFixed(1)}px`;
+        stage.style.height = `${(sticky.clientHeight || window.innerHeight).toFixed(1)}px`;
+        stage.style.borderRadius = '0px';
+        stage.style.pointerEvents = phase === 'before' ? 'none' : 'auto';
+        setSourceHidden(false);
+        if (copyRef.current) {
+          copyRef.current.style.opacity = phase === 'before' ? '0' : '1';
+          copyRef.current.style.transform = 'translateY(0px)';
+          copyRef.current.style.pointerEvents = phase === 'before' ? 'none' : 'auto';
+        }
+        return;
+      }
+      if (phase === 'before') {
+        stage.style.opacity = '0';
+        stage.style.pointerEvents = 'none';
+        start = null;
+        setSourceHidden(false);
+        if (copyRef.current) {
+          copyRef.current.style.opacity = '0';
+          copyRef.current.style.pointerEvents = 'none';
+        }
+        return;
+      }
+      if (phase === 'after') {
+        const vw = sticky.clientWidth || window.innerWidth;
+        const vh = sticky.clientHeight || window.innerHeight;
+        stage.style.opacity = '1';
+        stage.style.left = '0px';
+        stage.style.top = '0px';
+        stage.style.width = `${vw.toFixed(1)}px`;
+        stage.style.height = `${vh.toFixed(1)}px`;
         stage.style.borderRadius = '0px';
         stage.style.pointerEvents = 'auto';
+        setSourceHidden(true);
         if (copyRef.current) {
           copyRef.current.style.opacity = '1';
           copyRef.current.style.transform = 'translateY(0px)';
           copyRef.current.style.pointerEvents = 'auto';
         }
+        return;
+      }
+      const s = start ?? captureStart();
+      if (!s) return;
+      const vw = sticky.clientWidth || window.innerWidth;
+      const vh = sticky.clientHeight || window.innerHeight;
+      const g = reduced ? 1 : Math.max(0, Math.min(1, p / GROW_SPLIT));
+      const e = g * g * (3 - 2 * g);
+      stage.style.opacity = '1';
+      stage.style.left = `${(s.l + (0 - s.l) * e).toFixed(1)}px`;
+      stage.style.top = `${(s.t + (0 - s.t) * e).toFixed(1)}px`;
+      stage.style.width = `${(s.w + (vw - s.w) * e).toFixed(1)}px`;
+      stage.style.height = `${(s.h + (vh - s.h) * e).toFixed(1)}px`;
+      stage.style.borderRadius = `${Math.round(s.r * (1 - e))}px`;
+      stage.style.pointerEvents = e > 0.9 ? 'auto' : 'none';
+      setSourceHidden(true);
+      if (copyRef.current) {
+        const reveal = Math.max(0, Math.min(1, (e - 0.55) / 0.45));
+        copyRef.current.style.opacity = reveal.toFixed(3);
+        copyRef.current.style.transform = `translateY(${Math.round((1 - reveal) * 18)}px)`;
+        copyRef.current.style.pointerEvents = e > 0.9 ? 'auto' : 'none';
+      }
+    };
+
+    const performSeek = () => {
+      raf = 0;
+      if (!near || !metadataReady || !Number.isFinite(video.duration) || video.duration <= 0) return;
+
+      if (Math.abs(target - current) < 0.0005) {
+        current = target;
+      } else {
+        current += (target - current) * 0.18;
+        raf = requestAnimationFrame(performSeek);
       }
 
-      if (wrap.getBoundingClientRect().top < window.innerHeight * 2) {
-        loadVideo();
+      if (takeover) {
+        layoutStage(current, getPhase());
       }
+
+      let seekTime = current * video.duration;
+      const mode = pacingRef.current;
+      if (mode === '5fps') {
+        // Quantize to 5 frames per second (0.20s increments)
+        seekTime = Math.round(seekTime * 5) / 5;
+      } else if (mode === '10fps') {
+        // Quantize to 10 frames per second (0.10s increments)
+        seekTime = Math.round(seekTime * 10) / 10;
+      }
+
+      const clampedTime = Math.min(video.duration - 0.05, Math.max(0, seekTime));
+      if (video.seeking) {
+        pendingTime = clampedTime;
+      } else if (Math.abs(video.currentTime - clampedTime) > 0.015) {
+        video.currentTime = clampedTime;
+        pendingTime = null;
+      }
+    };
+
+    const scheduleSeek = () => {
+      if (!raf) raf = requestAnimationFrame(performSeek);
+    };
+
+    const onScroll = () => {
+      placeWrap();
+      const bounds = wrap.getBoundingClientRect();
+      const distance = Math.max(1, bounds.height - window.innerHeight);
+      target = Math.min(1, Math.max(0, -bounds.top / distance));
+      const beat = Math.min(BEATS.length - 1, Math.floor(target * BEATS.length));
+      if (beat !== lastBeat) {
+        lastBeat = beat;
+        setActive(beat);
+      }
+      if (!takeover && copyRef.current) {
+        copyRef.current.style.opacity = '1';
+        copyRef.current.style.transform = 'translateY(0px)';
+      }
+      scheduleSeek();
+    };
+
+    const videoSrc = isMobile ? '/page-section2/jm-scroll-mobile.mp4' : '/page-section2/jm-scroll-desktop.mp4';
+
+    const loadVideo = () => {
+      near = true;
+      video.preload = 'auto';
+      if (!video.src || (!video.src.endsWith(videoSrc) && video.currentSrc !== videoSrc)) {
+        video.src = videoSrc;
+        video.load();
+      } else if (video.readyState >= 1) {
+        metadataReady = true;
+        setLoaded(100);
+        setReady(true);
+      }
+      setLoaded(100);
       onScroll();
+    };
 
-      return () => {
-        observer.disconnect();
-        window.removeEventListener('scroll', onScroll);
-        wrap.removeEventListener('touchstart', primeOnTouch);
-        video.removeEventListener('loadedmetadata', onMetadata);
-        video.removeEventListener('loadeddata', onFrame);
-        video.removeEventListener('seeked', onSeeked);
-        cancelAnimationFrame(raf);
+    const onMetadata = () => {
+      metadataReady = true;
+      near = true;
+      setLoaded(100);
+      setReady(true);
+      scheduleSeek();
+    };
+
+    const onFrame = () => {
+      metadataReady = true;
+      near = true;
+      setReady(true);
+      setLoaded(100);
+    };
+
+    const onSeeked = () => {
+      onFrame();
+      if (pendingTime !== null && Math.abs(video.currentTime - pendingTime) > 0.015) {
+        const next = pendingTime;
+        pendingTime = null;
+        video.currentTime = next;
+      } else {
+        scheduleSeek();
+      }
+    };
+
+    const primeOnInteraction = () => {
+      if (!near || primed) return;
+      primed = true;
+      void video.play().then(() => {
         video.pause();
-      };
-    }
+        scheduleSeek();
+      }).catch(() => {
+        primed = false;
+      });
+    };
 
-    // --- DESKTOP CANVAS FLYTHROUGH ENGINE (ORIGINAL) ---
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting && !near) loadVideo();
+    }, { rootMargin: '100% 0px' });
+
+    video.addEventListener('loadedmetadata', onMetadata);
+    video.addEventListener('loadeddata', onFrame);
+    video.addEventListener('seeked', onSeeked);
+    observer.observe(wrap);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    wrap.addEventListener('touchstart', primeOnInteraction, { passive: true });
+    wrap.addEventListener('mouseenter', primeOnInteraction, { passive: true });
+
+    const onResize = () => {
+      stacked = window.matchMedia('(max-width: 1100px)').matches;
+      placed = false;
+      placeWrap();
+      onScroll();
+    };
+    window.addEventListener('resize', onResize);
+
+    if (wrap.getBoundingClientRect().top < window.innerHeight * 2) {
+      loadVideo();
+    }
+    placeWrap();
+    onScroll();
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onResize);
+      wrap.removeEventListener('touchstart', primeOnInteraction);
+      wrap.removeEventListener('mouseenter', primeOnInteraction);
+      video.removeEventListener('loadedmetadata', onMetadata);
+      video.removeEventListener('loadeddata', onFrame);
+      video.removeEventListener('seeked', onSeeked);
+      cancelAnimationFrame(raf);
+      video.pause();
+      setSourceHidden(false);
+    };
+  }, [embedded, takeover, isMobile, engineMode]);
+
+  // --- 2. ORIGINAL CANVAS FRAMES ENGINE (FALLBACK / SIDE-BY-SIDE COMPARISON) ---
+  useEffect(() => {
+    if (engineMode !== 'frames') return;
+    const wrap = wrapRef.current;
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!wrap || !canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
     const variant: Variant = detectVariant();
     let mobile = variant === 'mobile';
     let stacked = window.matchMedia('(max-width: 1100px)').matches;
-    // Display idx 0 = the opening still; idx d>0 = video frame d-1.
     let count = 256;
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -208,15 +397,10 @@ export default function ScrollFlythrough({ embedded = false, takeover = false }:
       }
     };
     const sizeCanvas = () => {
-      // Canvas fills the morph stage; clientWidth is unaffected by layout,
-      // so the backing store tracks the stage exactly as it grows.
       const w = canvas.clientWidth || canvas.getBoundingClientRect().width;
       const h = canvas.clientHeight || canvas.getBoundingClientRect().height;
       const deviceDpr = window.devicePixelRatio || 1;
       const { width: frameWidth, height: frameHeight } = frameStore.frameSize;
-      // Rendering past the source resolution upscales the frame, then the
-      // browser downsamples the canvas again. This matters on high-density
-      // desktop and mobile screens, especially now that both use cover.
       const sourceDpr = Math.max(1, Math.min(frameWidth / Math.max(1, w), frameHeight / Math.max(1, h)));
       const dpr = Math.min(deviceDpr, sourceDpr, mobile ? 2.5 : Number.POSITIVE_INFINITY);
       const W = Math.max(2, Math.round(w * dpr));
@@ -259,8 +443,6 @@ export default function ScrollFlythrough({ embedded = false, takeover = false }:
     };
     const placeWrap = () => {
       if (placed || !takeover) return;
-      // The first flythrough frame is the still image on stacked layouts.
-      // Keep its section after the company copy without desktop overlap.
       if (stacked) {
         wrap.style.marginTop = '0px';
         placed = true;
@@ -293,8 +475,6 @@ export default function ScrollFlythrough({ embedded = false, takeover = false }:
       const sticky = stickyRef.current;
       if (!takeover || !stage || !sticky) return;
       if (stacked) {
-        // Keep frame zero visible as this section enters, then reveal the
-        // scroll copy only once the sticky animation reaches the viewport.
         stage.style.opacity = '1';
         stage.style.left = '0px';
         stage.style.top = '0px';
@@ -377,7 +557,6 @@ export default function ScrollFlythrough({ embedded = false, takeover = false }:
         paintedIndex = idx;
         return;
       }
-      // Frame still decoding — paint it the moment it arrives, if still current.
       const wanted = idx;
       frameStore
         .ensureFrame(idx - 1)
@@ -431,7 +610,6 @@ export default function ScrollFlythrough({ embedded = false, takeover = false }:
     (async () => {
       setLoaded(5);
       try {
-        // Shares the home-page preload (no double download); runs it standalone otherwise.
         await frameStore.ensure(variant);
       } catch {
         /* sheets decode lazily at runtime */
@@ -490,61 +668,136 @@ export default function ScrollFlythrough({ embedded = false, takeover = false }:
       window.removeEventListener('resize', onResize);
       setSourceHidden(false);
     };
-  }, [embedded, takeover, isMobile]);
+  }, [embedded, takeover, engineMode]);
+
+  const posterSrc = isMobile ? '/page-section2/poster-mobile.jpg' : (engineMode === 'video' ? '/page-section2/poster-desktop.jpg' : ZERO_SRC);
+
+  const renderEngineControls = () => (
+    <aside className={styles.engineBar} aria-label="Flythrough animation engine switcher">
+      <span className={styles.engineLabel}>Mode:</span>
+      <div className={styles.engineGroup} role="group" aria-label="Engine selector">
+        <button
+          type="button"
+          className={`${styles.engineBtn} ${engineMode === 'video' ? styles.engineBtnActive : ''}`}
+          onClick={() => {
+            setReady(false);
+            setEngineMode('video');
+          }}
+        >
+          Video (New)
+        </button>
+        <button
+          type="button"
+          className={`${styles.engineBtn} ${engineMode === 'frames' ? styles.engineBtnActive : ''}`}
+          onClick={() => {
+            setReady(false);
+            setEngineMode('frames');
+          }}
+        >
+          Frames (Canvas)
+        </button>
+      </div>
+
+      {engineMode === 'video' && (
+        <>
+          <span className={styles.engineLabel} style={{ marginLeft: 6 }}>Pacing:</span>
+          <div className={styles.engineGroup} role="group" aria-label="Pacing selector">
+            <button
+              type="button"
+              className={`${styles.engineBtn} ${pacingMode === 'smooth' ? styles.engineBtnActive : ''}`}
+              onClick={() => setPacingMode('smooth')}
+              title="Continuous smooth interpolation"
+            >
+              Smooth
+            </button>
+            <button
+              type="button"
+              className={`${styles.engineBtn} ${pacingMode === '5fps' ? styles.engineBtnActive : ''}`}
+              onClick={() => setPacingMode('5fps')}
+              title="5 frames per second discrete stepping"
+            >
+              5 FPS
+            </button>
+            <button
+              type="button"
+              className={`${styles.engineBtn} ${pacingMode === '10fps' ? styles.engineBtnActive : ''}`}
+              onClick={() => setPacingMode('10fps')}
+              title="10 frames per second discrete stepping"
+            >
+              10 FPS
+            </button>
+          </div>
+        </>
+      )}
+    </aside>
+  );
 
   if (takeover) {
     return (
       <div ref={wrapRef} className={styles.takeoverWrap}>
         <div ref={stickyRef} className={styles.takeoverSticky}>
+          {renderEngineControls()}
           {/* Desktop grows from #about-zero-frame; stacked layouts use this
               opening frame as the sole storefront image. */}
           <div ref={stageRef} className={styles.morphStage}>
-          {isMobile ? (
-            <video
-              ref={videoRef}
-              className={styles.mobileVideo}
-              muted
-              playsInline
-              preload="none"
+            {engineMode === 'video' ? (
+              <video
+                ref={videoRef}
+                className={styles.stageVideo}
+                muted
+                playsInline
+                preload="none"
+                aria-hidden="true"
+              />
+            ) : (
+              <canvas
+                ref={canvasRef}
+                className={ready ? styles.canvasOn : styles.canvas}
+                aria-label="Scroll-driven flythrough of Jagyasi Mobiles store"
+              />
+            )}
+            {/* Zeroth frame / poster */}
+            <img
+              src={posterSrc}
+              alt=""
+              className={styles.poster}
               aria-hidden="true"
+              style={{ opacity: ready ? 0 : 1, transition: 'opacity .7s ease' }}
             />
-          ) : (
-            <canvas ref={canvasRef} className={ready ? styles.canvasOn : styles.canvas} aria-label="Scroll-driven flythrough of Jagyasi Mobiles store" />
-          )}
-          {/* Zeroth frame — same asset as the image div above, so frame 0 matches exactly */}
-          <img src={isMobile ? '/page-section2/poster-mobile.jpg' : ZERO_SRC} alt="" className={styles.poster} aria-hidden="true" style={{ opacity: ready ? 0 : 1, transition: 'opacity .7s ease' }} />
-          <div className={styles.scrim} aria-hidden="true" />
-          <div className={styles.progress} aria-hidden="true">
-            <span style={{ transform: `scaleX(${loaded / 100})` }} />
-          </div>
-          <div className={styles.rail} aria-hidden="true">
-            {BEATS.map((_, i) => (
-              <span key={i} className={i <= active ? styles.dotOn : styles.dot} />
-            ))}
-          </div>
-          <div ref={copyRef} className={styles.copy} style={isMobile ? { opacity: 1, pointerEvents: 'auto' } : { opacity: 0 }}>
-            <p className={styles.kicker}>Keep scrolling — walking you in · {loaded}% ready</p>
-            {BEATS.map((b, i) => (
-              <div key={b.title} className={i === active ? styles.beatOn : styles.beat}>
-                <p className={styles.eyebrow}>{b.eyebrow}</p>
-                <h2 className={styles.title}>{b.title}</h2>
-                <p className={styles.body}>{b.body}</p>
-                {b.tags.length > 0 && (
-                  <div className={styles.tags}>
-                    {b.tags.map((t) => (
-                      <span key={t}>{t}</span>
-                    ))}
-                  </div>
-                )}
-                {b.cta && (
-                  <div className={styles.ctaRow}>
-                    <a href="/franchise" className={styles.ctaPrimary}>Open a franchise</a>
-                    <a href="/brands" className={styles.ctaGhost}>Explore brands</a>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
+            <div className={styles.scrim} aria-hidden="true" />
+            <div className={styles.progress} aria-hidden="true">
+              <span style={{ transform: `scaleX(${loaded / 100})` }} />
+            </div>
+            <div className={styles.rail} aria-hidden="true">
+              {BEATS.map((_, i) => (
+                <span key={i} className={i <= active ? styles.dotOn : styles.dot} />
+              ))}
+            </div>
+            <div ref={copyRef} className={styles.copy} style={isMobile ? { opacity: 1, pointerEvents: 'auto' } : { opacity: 0 }}>
+              <p className={styles.kicker}>
+                {engineMode === 'video' ? `Video Mode (${pacingMode.toUpperCase()})` : 'Canvas Frames Mode'} · {loaded}% ready
+              </p>
+              {BEATS.map((b, i) => (
+                <div key={b.title} className={i === active ? styles.beatOn : styles.beat}>
+                  <p className={styles.eyebrow}>{b.eyebrow}</p>
+                  <h2 className={styles.title}>{b.title}</h2>
+                  <p className={styles.body}>{b.body}</p>
+                  {b.tags.length > 0 && (
+                    <div className={styles.tags}>
+                      {b.tags.map((t) => (
+                        <span key={t}>{t}</span>
+                      ))}
+                    </div>
+                  )}
+                  {b.cta && (
+                    <div className={styles.ctaRow}>
+                      <a href="/franchise" className={styles.ctaPrimary}>Open a franchise</a>
+                      <a href="/brands" className={styles.ctaGhost}>Explore brands</a>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -554,12 +807,13 @@ export default function ScrollFlythrough({ embedded = false, takeover = false }:
   if (embedded) {
     return (
       <div ref={wrapRef} className={styles.embedWrap}>
-        {isMobile ? (
-          <video ref={videoRef} className={styles.mobileVideo} muted playsInline preload="none" aria-hidden="true" />
+        {renderEngineControls()}
+        {engineMode === 'video' ? (
+          <video ref={videoRef} className={styles.stageVideo} muted playsInline preload="none" aria-hidden="true" />
         ) : (
           <canvas ref={canvasRef} className={styles.embedCanvas} aria-label="Scroll-driven flythrough of Jagyasi Mobiles store" />
         )}
-        {!ready && <img src={isMobile ? '/page-section2/poster-mobile.jpg' : ZERO_SRC} alt="" className={styles.embedPoster} aria-hidden="true" />}
+        {!ready && <img src={posterSrc} alt="" className={styles.embedPoster} aria-hidden="true" />}
       </div>
     );
   }
@@ -567,12 +821,13 @@ export default function ScrollFlythrough({ embedded = false, takeover = false }:
   return (
     <div ref={wrapRef} className={styles.wrap} id="flythrough">
       <div className={styles.sticky}>
-        {isMobile ? (
-          <video ref={videoRef} className={styles.mobileVideo} muted playsInline preload="none" aria-hidden="true" />
+        {renderEngineControls()}
+        {engineMode === 'video' ? (
+          <video ref={videoRef} className={styles.stageVideo} muted playsInline preload="none" aria-hidden="true" />
         ) : (
           <canvas ref={canvasRef} className={styles.canvas} aria-label="Scroll-driven flythrough of Jagyasi Mobiles store" />
         )}
-        {!ready && <img src={isMobile ? '/page-section2/poster-mobile.jpg' : ZERO_SRC} alt="" className={styles.poster} aria-hidden="true" />}
+        {!ready && <img src={posterSrc} alt="" className={styles.poster} aria-hidden="true" />}
         <div className={styles.scrim} aria-hidden="true" />
         <div className={styles.progress} aria-hidden="true">
           <span style={{ transform: `scaleX(${loaded / 100})` }} />
@@ -583,7 +838,9 @@ export default function ScrollFlythrough({ embedded = false, takeover = false }:
           ))}
         </div>
         <div className={styles.copy}>
-          <p className={styles.kicker}>Scroll to walk in · {loaded}% ready</p>
+          <p className={styles.kicker}>
+            {engineMode === 'video' ? `Video Mode (${pacingMode.toUpperCase()})` : 'Canvas Frames Mode'} · {loaded}% ready
+          </p>
           {BEATS.map((b, i) => (
             <div key={b.title} className={i === active ? styles.beatOn : styles.beat}>
               <p className={styles.eyebrow}>{b.eyebrow}</p>
